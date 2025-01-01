@@ -1,0 +1,270 @@
+body {
+  /*same font as taken from the dev tools from real SEP website*/
+  font-family: "Source Sans Pro", Arial, sans-serif;
+  margin: 20px;
+  /*gradient background */
+  background: linear-gradient(to bottom, #a6283b, white 90%);
+  background-attachment: fixed; /* Keep the background fixed relative to scrolling */
+  background-size: cover;
+  /* in case all else fails keep it red for transitions to next website*/
+  background-color: #a6283b;
+}
+
+h1 {
+  text-align: center;
+}
+
+/* Flex container to hold the views side by side */
+.chart-wrapper {
+  display: flex;
+  flex-direction: row; /* Align items side by side */
+  justify-content: space-between; /* Add spacing between the views */
+  align-items: stretch; /* Ensure views align to the same height */
+  margin: 0px 0; /* NO extra spacing above and below */
+  width: 100%; 
+  box-sizing: border-box; /* Include padding and borders in width calculations */
+}
+
+
+
+
+
+.chart-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.chart-container {
+  flex: 1;
+  min-width: 300px;
+  margin: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #f3ebea; /*background beige */
+  border-radius: 15px;
+}
+
+#networkGraph { /*I feel like this doesnt do anything but I'm keeping it in case (i forgot why i put it there or if it's being overriden*/
+  width: 100%;
+  height: 500px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+
+
+
+.title-and-controls {
+  display: flex;
+  justify-content: space-between; /* Place title on the left and buttons on the right */
+  align-items: center; /* Vertically align them */
+  margin-bottom: 0px; 
+}
+
+#controls {
+  display: flex;
+  gap: 10px; /* gap between the buttons */
+}
+
+.titleAndcontrolsofNetwork {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 0px; 
+}
+
+#subcat-label{
+  font-size: 16px;
+}
+
+#cat-label{
+  font-size: 16px;
+}
+
+
+
+#zoom-slider {
+  -webkit-appearance: none; /* Remove default styling */
+  appearance: none;
+  width: 300px;
+  height: 8px;
+  background: linear-gradient(to right, #a6283b, #cf4848); /* gradient for track color */
+  border-radius: 5px; /* Rounded corners */
+  outline: none;
+  opacity: 0.8; /* Slight transparency */
+  transition: opacity 0.2s;
+}
+
+#zoom-slider:hover {
+  opacity: 1; /* Full opacity when hovered */
+}
+
+#zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Remove default styling */
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #a6283b; /* Change the thumb color */
+  border-radius: 50%; /* Make the thumb circular */
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add shadow for better visibility */
+}
+/*for DIFFERENT BROWSERS keep consistent*/
+#zoom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #a6283b; 
+  border-radius: 50%; 
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+}
+
+#zoom-slider::-ms-thumb {
+  width: 16px;
+  height: 16px;
+  background: #a6283b; 
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
+}
+
+/* Title container styling (SEP explorer bit) */
+#title-container {
+  display: flex;
+  align-items: center; /* Center content vertically */
+  justify-content: center; /* Center content horizontally */
+  background-color: #f3ebea;
+  padding: 10px 20px;
+  border-radius: 15px; /* Creates curved edges */
+  margin-bottom: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative; /* Allows positioning the image */
+}
+
+/* Image styling */
+#sep-logo {
+  width: 50px; 
+  height: 50px; 
+  position: absolute; /* Position the image */
+  left: 330px; /* Distance from the left edge */
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Correct vertical alignment */
+}
+
+/* Title styling */
+#title-container h1 {
+  margin: 0;
+  font-size: 1.8em; 
+  color: #000;
+  text-align: center; /* Center text */
+  margin-left: 40px;
+}
+
+
+/*help button*/
+#help-button {
+  background-color: #f0f0f0;
+  border: 2px solid #6f6f6f;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 40px; 
+}
+
+#help-button:hover {
+  background-color: #d1cb18; /* Change background color */
+  border-color: #555;        /* Change border color */
+  transform: scale(1.1);     /* Slightly enlarge the button */
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
+/* Help overlay */
+#help-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  height: 141vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Hidden state */
+.hidden {
+  display: none !important; /* to override the flex thing in help-overlay*/
+}
+
+/* Help boxes */
+.help-box {
+  position: absolute;
+  background: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.help-box-title {
+  position: absolute;
+  background: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  
+}
+
+.help-box-title .arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #ccc;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.help-box .arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #ccc;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.help-box .arrowtop {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #ccc;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#credits {
+  text-align: center;           /* Center the text */
+  background-color: #f3ebea;    /* Light beige background */
+  color: #6f6f6f;               /* Subtle gray text color */
+  padding: 5px 0;              /* Add some space around the text */
+  font-size: 14px;              /* Slightly smaller font size */
+  border-radius: 15px;
+}

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
+    <title>SEP Network Visualisation</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css"/>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div id="title-container">
+        <img src="SEP-LOGO.jpg" alt="SEP Logo" id="sep-logo">
+        <h1>Stanford Encyclopedia of Philosopher Navigator </h1>
+        <button id="help-button" aria-label="Help">?</button>
+    </div>
+    <div id="help-overlay" class="hidden">
+        <!-- Example of help boxes -->
+        <div class="help-box" style="top: 600px; left: 20px;">
+            <p>Click on the individual nodes to open a new tab to that article!</p>
+            <div class="arrowtop"></div>
+        </div>
+        <div class="help-box-title" style="top: 30px; left: 100px;">
+            <p>This is the <strong>Treemap View</strong>. It enables you to see the categories </br> and sub-categories and where articles are positioned in the hierarchy </p>
+            <div class="arrow"></div>
+        </div>
+        <div class="help-box" style="top: 200px; left: 150px;">
+            <p>Click on sub-Categories to only expand </br>and only view the articles within that section!</p>
+            <div class="arrow"></div>
+        </div>
+        <div class="help-box" style="top: 400px; left: 300px;">
+            <p>Hover to see the name of the category/article</p>
+            <div class="arrow"></div>
+        </div>
+        <div class="help-box" style="top: 680px; left: 820px;">
+            <p>Click on the individual nodes to only view them +whichever other link they have a link to!</p>
+            <div class="arrowtop"></div>
+        </div>
+        <div class="help-box-title" style="top: 30px; left: 850px;">
+            <p>This is the <strong>Network View</strong>. It enables you to see the links between articles according to the "closely related" tag in the SEP. The size of the nodes is proportional to the number of links to them, and at all times the 10 largest nodes have their names shown. </p>
+            <div class="arrow"></div>
+        </div>
+        <div class="help-box" style="top: 240px; left: 800px;">
+            <p>Zoom by double clicking or toggling the zoom slider</p>
+            <div class="arrowtop"></div>
+        </div>
+        <div class="help-box" style="top: 400px; left: 1200px;">
+            <p>Hover to see info on the article!</p>
+            <div class="arrow"></div>
+        </div>
+    </div>
+    <!-- Flex wrapper for side-by-side views -->
+    <div class="chart-wrapper">
+        <div id="treeMapContainer" class="chart-container">
+            <div class="title-and-controls">
+            <h2>Articles hierarchy</h2>
+            <div id="controls"></div>
+        </div>
+    </div>
+        <div id="largeNetworkContainer" class="chart-container">
+            <div class = "titleAndcontrolsofNetwork">
+                <h2>Articles Links</h2>
+            <!-- Dropdowns for filtering -->
+                <div >
+                    <label for="category-select" id = "cat-label">Top Category: </label>
+                    <select id="category-select">
+                        <option value="All">All</option>
+                    <!-- Options will be populated dynamically -->
+                    </select>
+
+                    <label for="subcategory-select" style="margin-left: 10px;" id = "subcat-label">Subcategory: </label>
+                    <select id="subcategory-select">
+                         <option value="All">All</option>
+                    <!-- Options populated based on top category selection -->
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer id="credits">
+        <p>© 2025 SEP Navigator. Created by Axel La Pira.</p>
+      </footer>
+      
+ 
+    <!-- Scripts -->
+    <script type = module src="js/index.js"></script>
+    <script>
+        // Load your data and initialize the large network graph
+        d3.json("data.json").then(data => {
+            drawLargeNetwork(data, "#largeNetworkContainer");
+        });
+    </script>
+</body>
+</html>
+
