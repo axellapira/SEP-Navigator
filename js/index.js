@@ -8,7 +8,7 @@ import globalState from './globalState.js';
 // Initialize the visualizations
 function initializeVisualizations() {
   // Load the data
-  d3.json('data/data.json').then((data) => {
+  d3.json('data.json').then((data) => {
       // Draw the Treemap
       drawTreeMap(data, '#treeMapContainer');
 
