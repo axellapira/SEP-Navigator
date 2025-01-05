@@ -37,7 +37,7 @@
             <div class="arrowtop"></div>
         </div>
         <div class="help-box-title" style="top: 30px; left: 850px;">
-            <p>This is the <strong>Network View</strong>. It enables you to see the links between articles according to the "closely related" tag in the SEP. The size of the nodes is proportional to the number of links to them, and at all times the 10 largest nodes have their names shown. </p>
+            <p>This is the <strong>Network View</strong>. It enables you to see the links between article and the articles it cites/mentions in the SEP. The size of the nodes is proportional to the number of mentions/citations, and at all times the 10 largest nodes have their names shown. </p>
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 240px; left: 800px;">
@@ -53,13 +53,13 @@
     <div class="chart-wrapper">
         <div id="treeMapContainer" class="chart-container">
             <div class="title-and-controls">
-            <h2>Articles hierarchy</h2>
+            <h2>Articles Taxonomy</h2>
             <div id="controls"></div>
         </div>
     </div>
         <div id="largeNetworkContainer" class="chart-container">
             <div class = "titleAndcontrolsofNetwork">
-                <h2>Articles Links</h2>
+                <h2>Articles Citations/Mentions</h2>
             <!-- Dropdowns for filtering -->
                 <div >
                     <label for="category-select" id = "cat-label">Top Category: </label>
@@ -84,7 +84,7 @@
  
     <!-- Scripts -->
     <script type = module src="js/index.js"></script>
-    
 </body>
 </html>
+
 
