@@ -1,6 +1,7 @@
 import globalState from './globalState.js';
  export function drawLargeNetwork(data, container) {
-    const width = 700;
+    const containerWidth = document.querySelector(container).offsetWidth;
+    const width = (containerWidth-25);
     const height = 800;
     const initialScale = 0.2; // start zoomed out
 
@@ -12,7 +13,7 @@ import globalState from './globalState.js';
         .append('div')
         .style('margin', '10px')
         .style('text-align', 'center') 
-        .style('position', 'absolute'); // I wanna position it inside the graph container
+        .style('position', 'absolute'); // I want to position it inside the graph container
         
         
 
@@ -92,7 +93,7 @@ function zoomed(event) {
     
     const colorScaleDepth1 = d3.scaleOrdinal(myWarmVariedColors);
 
-    // Helper to determine top-level (broad) category
+    // Helper to determine top-level category
     function getTopCategoryName(node) {
         if (!node) return 'Unknown';
         // If node.broaderCategory === 'Root', then node.category is top-level
@@ -103,48 +104,47 @@ function zoomed(event) {
     }
     
     function fitView() {
-    // 1) Get bounding box of everything in <g>
+    // Get bounding box of everything in <g>
     const bounds = g.node().getBBox();
-    const fullWidth  = width;  // your svg width
-    const fullHeight = height; // your svg height
+    const fullWidth  = width;  
+    const fullHeight = height; 
 
-    // If you might have margins, subtract them from fullWidth/fullHeight
 
     const widthScale  = fullWidth  / bounds.width;
     const heightScale = fullHeight / bounds.height;
     const zoomLevel   = 0.9 * Math.min(widthScale, heightScale); // a factor < 1 for padding
 
-    // 2) Compute center of bounding box
+    // Compute center of bounding box
     const midX = bounds.x + bounds.width/2;
     const midY = bounds.y + bounds.height/2;
 
-    // 3) Define a transform
+    // Define a transform
     const transform = d3.zoomIdentity
         .translate(fullWidth/2, fullHeight/2)
         .scale(zoomLevel)
         .translate(-midX, -midY);
 
-    // 4) Smoothly animate zoom/pan to fit
+    //  animate
     svg.transition()
         .duration(750)
         .call(zoom.transform, transform);
 }
 
 function incrementZoom(delta = 0.1) {
-    // 1) Read current slider value
+    // look at current slider value
     const currentValue = parseFloat(zoomSlider.property('value'));
     
-    // 2) Compute new value
+    
     let newValue = currentValue + delta;
-    // Optionally clamp within [min, max]:
+    //  clamp within [min, max]:
     newValue = Math.max(0.1, Math.min(1.5, newValue)); 
   
-    // 3) Update slider’s displayed value
+    // update slider’s displayed value
     zoomSlider.property('value', newValue);
   
-    // 4) Animate to new zoom level
+    //animate again
     svg.transition()
-       .duration(200)               // smooth animation
+       .duration(200)               
        .call(zoom.scaleTo, newValue);
   }
   
@@ -155,7 +155,7 @@ function incrementZoom(delta = 0.1) {
 
     const nodes = [];
 
-    // Recursively traverse the hierarchy to build a flat array of "nodes"
+    // Recursively traverse the hierarchy to build a flat array of nodes
     function traverseHierarchy(node, category, broaderCategory = null) {
         nodes.push({
             id: node.id || node.name,
@@ -187,7 +187,7 @@ function incrementZoom(delta = 0.1) {
         const targetNode = nodeById[l.target];
 
         // Increase link count for each end
-        if (sourceNode) sourceNode.linkCount++;
+        
         if (targetNode) targetNode.linkCount++;
 
         // Return the link using node objects
@@ -199,7 +199,7 @@ function incrementZoom(delta = 0.1) {
     });
 
     //------------------------------------------------
-    // 5) SET UP FORCE SIMULATION
+    // 5) SET UP FORCE SIMULATION (taken from Mike Bostock)
     //------------------------------------------------
 
     const scale = 0.5;
@@ -272,7 +272,7 @@ label = labelEnter.merge(label);
                 <em>Category:</em> ${d.broaderCategory}<br>
                 <em>Sub-Category:</em> ${d.category}<br>
                 ${d.author ? `<em>Author:</em> ${d.author}<br>` : ''} 
-                ${d.wordCount ? `<em>Number of Links:</em> ${d.linkCount}<br>` : ''}
+                ${d.wordCount ? `<em>Number of citations:</em> ${d.linkCount}<br>` : ''}
             `)
             .style('left', `${event.pageX + 10}px`)
             .style('top', `${event.pageY + 10}px`);
@@ -474,7 +474,7 @@ label = labelEnter.merge(label);
                     <em>Category:</em> ${d.broaderCategory}<br>
                     <em>Sub-Category:</em> ${d.category}<br>
                     ${d.author ? `<em>Author:</em> ${d.author}<br>` : ''} 
-                    ${d.wordCount ? `<em>Number of Links:</em> ${d.linkCount}<br>` : ''}
+                    ${d.wordCount ? `<em>Number of citations:</em> ${d.linkCount}<br>` : ''}
                 `)
                 .style('left', `${event.pageX + 10}px`)
                 .style('top', `${event.pageY + 10}px`);
@@ -556,7 +556,7 @@ label = labelEnter.merge(label);
     
 
     //------------------------------------------------
-    // 11) NODE FUNCTION: UPDATE GRAPH FOR A CLICKED NODE
+    // 11) UPDATE GRAPH FOR A CLICKED NODE
     //------------------------------------------------
 
     function updateGraphForNode(clickedNode) {
@@ -596,7 +596,7 @@ label = labelEnter.merge(label);
                     <em>Category:</em> ${d.broaderCategory}<br>
                     <em>Sub-Category:</em> ${d.category}<br>
                     ${d.author ? `<em>Author:</em> ${d.author}<br>` : ''} 
-                    ${d.wordCount ? `<em>Number of Links:</em> ${d.linkCount}<br>` : ''}
+                    ${d.wordCount ? `<em>Number of citations:</em> ${d.linkCount}<br>` : ''}
                 `)
                 .style('left', `${event.pageX + 10}px`)
                 .style('top', `${event.pageY + 10}px`);
