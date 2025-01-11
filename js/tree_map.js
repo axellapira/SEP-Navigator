@@ -13,9 +13,9 @@ import globalState from './globalState.js';
         .append('g')
         .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-    // Original root hierarchy
+    // Original root hierarchy ("PHILOSOPHY")
     const originalRoot = d3.hierarchy(data.hierarchy)
-        .sum(d => +d.word_count || 2000)
+        .sum(d => +d.word_count || 2000) // this used to be when I wanted to make use of the word count, but I don't anymore. However, taking this off creates problems so it stays.
         .sort((a, b) => b.value - a.value);
 
     // Preprocess originalRoot to add stable metadata
@@ -51,7 +51,7 @@ import globalState from './globalState.js';
         
 
     const colorScaleDepth1 = d3.scaleOrdinal(myWarmVariedColors);
-
+//tooltip parameters
     const tooltip = d3.select(container)
         .append('div')
         .attr('class', 'tooltip')
@@ -62,6 +62,8 @@ import globalState from './globalState.js';
         .style('border-radius', '4px')
         .style('display', 'none')
         .style('pointer-events', 'none');
+    
+    //Helper to press the button twice which is needed
 
     let lastbuttonisBack = false;
 
@@ -81,6 +83,7 @@ import globalState from './globalState.js';
                     .sort((a, b) => b.value - a.value);
                     
                     const originalDepth = parentNode.data._originalDepth;
+                    //update the global state to update the network
                     
                     if (originalDepth === 0) {
                         globalState.update({
@@ -144,13 +147,13 @@ import globalState from './globalState.js';
                 return d.data.name || 'Root'; // Current root node
             }
             if (relativeDepth === 0 && d.data._originalDepth==3) {
-                return d.data.name + " (Click to read the Article!!)"; // Current root node
+                return d.data.name + " (Click to read the Article!!)"; // article view
             }
             if (relativeDepth === 1 ) {
                 return d.data.name; // Direct children of the current view
             }
             if (relativeDepth === 2 && d.data._originalDepth!=3 ){
-                return d.data.name ; // Grandchildren of the current view
+                return d.data.name ; // Grandchildren of the current view unless it's an article
             }
             return ''; // Hide text for nodes deeper than grandchildren
         }
@@ -188,7 +191,7 @@ import globalState from './globalState.js';
             const parentColor = d3.hsl(colorScaleDepth1(topCat));
             parentColor.s -= 0.2;
             parentColor.l += 0.15;
-            return parentColor;
+            return parentColor; //Makes saturation and lightness higher as depth increases
         }
     }
 
@@ -317,14 +320,14 @@ import globalState from './globalState.js';
 
         console.log("Subscription fired: ", view);
         // `view` is the updated globalState.currentView
-        // Reconstruct or re-filter your treemap based on that view.
+       
         
 
     
         if (view.type === 'broad' && view.category) {
 
             
-            // Filter or zoom the treemap to that broad category...
+            // filter or zoom the treemap to that broad category
             let targetNode = findOriginalNodeByName(originalRoot, view.category);
                     if (targetNode) {
                         if (!lastbuttonisBack){path.push(targetNode);
@@ -342,7 +345,10 @@ import globalState from './globalState.js';
             let targetNode = findOriginalNodeByName(originalRoot, view.subcategory);
                     if (targetNode) {
 
-                        if (!lastbuttonisBack){path.push(targetNode);}
+                        if (!lastbuttonisBack){
+                            path.push(targetNode); 
+                            console.log(path)
+                        }
                         lastbuttonisBack = false;
                         let newRoot = d3.hierarchy(path[path.length-1].data)
                             .sum(d => +d.word_count || 2000)
@@ -357,26 +363,45 @@ import globalState from './globalState.js';
             treemap(initialRoot);
             update(initialRoot);
         } else if (view.type ==='single'&& view.node){
+            
             let targetNode = findOriginalNodeByName(originalRoot, view.node.name);
                     if (targetNode) {
-                        if (!lastbuttonisBack){path.push(targetNode);}
-                        lastbuttonisBack = false;
                         
+                        if (!lastbuttonisBack){path.push(targetNode);}
+                        console.log(path)
+                        
+                        lastbuttonisBack = false;
+
+                        if (path.length >1){
                         let newRoot = d3.hierarchy(path[path.length-1].data)
                             .sum(d => +d.word_count || 2000)
                             .sort((a, b) => b.value - a.value);
                         treemap(newRoot);
                         
                         update(newRoot);}
+                         else{
+                            path.push(targetNode);
+                            console.log(path)
+
+                            let newRoot = d3.hierarchy(path[path.length-1].data)
+                            .sum(d => +d.word_count || 2000)
+                            .sort((a, b) => b.value - a.value);
+                        treemap(newRoot);
+                        
+                        update(newRoot);
+                        }
+                    
+                    }
         }
       });
 
  
 
-    // Initial draw with full root
+    // Initial draw with full root at philosophy
     let initialRoot = d3.hierarchy(path[0].data)
         .sum(d => +d.word_count || 2000)
         .sort((a, b) => b.value - a.value);
     treemap(initialRoot);
     update(initialRoot);
 }
+
