@@ -15,7 +15,6 @@
         <button id="help-button" aria-label="Help">?</button>
     </div>
     <div id="help-overlay" class="hidden">
-        <!-- Example of help boxes -->
         <div class="help-box" style="top: 600px; left: 20px;">
             <p>Click on the individual nodes to open a new tab to that article!</p>
             <div class="arrowtop"></div>
@@ -33,7 +32,7 @@
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 680px; left: 820px;">
-            <p>Click on the individual nodes to only view them +whichever other node they have a link to!</p>
+            <p>Click on the individual nodes to only view them +whichever other node they cite/cites them!</p>
             <div class="arrowtop"></div>
         </div>
         <div class="help-box-title" style="top: 30px; left: 850px;">
@@ -49,7 +48,7 @@
             <div class="arrow"></div>
         </div>
     </div>
-    <!-- Flex wrapper for side-by-side views -->
+    <!-- Flex wrapper for side by side views -->
     <div class="chart-wrapper">
         <div id="treeMapContainer" class="chart-container">
             <div class="title-and-controls">
@@ -65,13 +64,12 @@
                     <label for="category-select" id = "cat-label">Top Category: </label>
                     <select id="category-select">
                         <option value="All">All</option>
-                    <!-- Options will be populated dynamically -->
                     </select>
 
                     <label for="subcategory-select" style="margin-left: 10px;" id = "subcat-label">Subcategory: </label>
                     <select id="subcategory-select">
                          <option value="All">All</option>
-                    <!-- Options populated based on top category selection -->
+                    <!-- Options populated after -->
                     </select>
                 </div>
             </div>
@@ -82,9 +80,8 @@
       </footer>
       
  
-    <!-- Scripts -->
+    
     <script type = module src="js/index.js"></script>
 </body>
 </html>
-
 
