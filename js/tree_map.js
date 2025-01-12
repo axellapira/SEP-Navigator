@@ -7,11 +7,21 @@ import globalState from './globalState.js';
     const height = 800 - margin.top - margin.bottom;
 
     const svg = d3.select(container)
-        .append('svg')
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.top})`);
+  .append('svg')
+  .attr('width', width + margin.left + margin.right)
+  .attr('height', height + margin.top + margin.bottom);
+
+svg.append("defs")
+  .append("clipPath")
+  .attr("id", "treemapClip")
+  .append("rect")
+  .attr("width", width)
+  .attr("height", height);
+
+const clippedGroup = svg.append('g')
+  .attr('clip-path', 'url(#treemapClip)')
+  .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
 
     // Original root hierarchy ("PHILOSOPHY")
     const originalRoot = d3.hierarchy(data.hierarchy)
@@ -63,9 +73,11 @@ import globalState from './globalState.js';
         .style('display', 'none')
         .style('pointer-events', 'none');
     
+        
     //Helper to press the button twice which is needed
 
     let lastbuttonisBack = false;
+
 
     const controls = d3.select('#controls');
     controls.append('button')
@@ -197,8 +209,11 @@ import globalState from './globalState.js';
 
     function update(currentRoot) {
         treemap(currentRoot);
-        const nodes = svg.selectAll('g.node')
-            .data(currentRoot.descendants(), d => d.data.name);
+        const nodes = clippedGroup.selectAll('g.node')
+  .data(currentRoot.descendants(), d => d.data.name);
+
+// Continue with the rest of your node logic as is.
+
 
         // EXIT old nodes
         nodes.exit().remove();
