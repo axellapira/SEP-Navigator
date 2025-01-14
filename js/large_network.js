@@ -80,13 +80,18 @@ function zoomed(event) {
     // 2) COLOR SCALES + HELPERS
     //------------------------------------------------
 
+   
+
+
     const myWarmVariedColors = [
-        "#6FAB78", // Metaphysics
-        "#D96666", // History of Philosophy
-        "#A982B4", // Phil of Knowledge
-        "#E3A617", // Moral Phil
-        "#5C99CC"  // Logic
+        "#65C977", // Metaphysics
+        "#db4848", // History of Philosophy
+        "#B874D9", // Philosophy of Knowledge
+        "#E69300", // Moral Philosophy (adjusted for a darker, orangey tone)
+        "#5CAFFD"  // Logic
     ];
+    
+    
     
     
     
@@ -396,6 +401,7 @@ label = labelEnter.merge(label);
             node: null
         });
     } else if (selectedSubCategory === "All"){
+        console.log("current")
         globalState.update({
             type: 'broad',
             category: selectedTopCategory,
@@ -550,8 +556,9 @@ label = labelEnter.merge(label);
     
         // 8) Adjust the view if necessary
         incrementZoom(0.01);
-        // then i fit the view a couple of times according to the current positioning of the nodes so I dont have to wait until the simulation has fully ended
 
+        // then i fit the view a couple of times according to the current positioning of the nodes so I dont have to wait until the simulation has fully ended
+        
     }
     
 
@@ -655,8 +662,8 @@ label = labelEnter.merge(label);
     
         // 7) Adjust the view (fitView)
         fitView();
-        setTimeout(fitView, 100); // Adjust view after layout starts
-        setTimeout(fitView, 1000); // Final adjustment after more stabilization
+        setTimeout(fitView, 100); // Adjustonce
+        setTimeout(fitView, 1000); // Final adjustment
     
         // 8) On each tick, reposition elements
         simulation.on('tick', () => {
@@ -744,3 +751,4 @@ label = labelEnter.merge(label);
 
     });
 }
+
