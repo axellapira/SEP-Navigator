@@ -49,11 +49,11 @@ const clippedGroup = svg.append('g')
         .paddingTop(d => d.depth === 0 ? 40 : 20);
 
         const myWarmVariedColors = [
-            "#D96666", // History of Philosophy
-            "#E3A617", // Moral Phil
-            "#6FAB78", // Metaphysics
-            "#A982B4", // Phil of Knowledge
-            "#5C99CC"  // Logic
+            "#db4848", // History of Philosophy (slightly darker)
+            "#E69300", // Moral Philosophy
+            "#65C977", // Metaphysics
+            "#B874D9", // Philosophy of Knowledge (slightly darker)
+            "#5CAFFD"  // Logic
         ];
         
         
@@ -167,7 +167,7 @@ const clippedGroup = svg.append('g')
             if (relativeDepth === 2 && d.data._originalDepth!=3 ){
                 return d.data.name ; // Grandchildren of the current view unless it's an article
             }
-            return ''; // Hide text for nodes deeper than grandchildren
+            return ''; // hide text for nodes deeper than grandchildren
         }
         
         
@@ -191,7 +191,7 @@ const clippedGroup = svg.append('g')
         const depth = d.data._originalDepth;
         const topCat = d.data._topCategory;
         if (depth === 0) {
-            return '#a6283b';
+            return '#8c1515';
         } else if (depth === 1) {
             return colorScaleDepth1(topCat);
         } else if (depth === 2) {
@@ -266,7 +266,7 @@ const clippedGroup = svg.append('g')
                         let newRoot = d3.hierarchy(path[path.length-1].data)
                             .sum(d => +d.word_count || 2000)
                             .sort((a, b) => b.value - a.value);
-                            
+                            //updates GlobalState
                             if (targetNode.depth === 0) {
                                 globalState.update({
                                     type: 'broad',
@@ -334,7 +334,7 @@ const clippedGroup = svg.append('g')
     globalState.subscribe((view) => {
 
         console.log("Subscription fired: ", view);
-        // `view` is the updated globalState.currentView
+        // view is the updated globalState.currentView
        
         
 
@@ -349,11 +349,23 @@ const clippedGroup = svg.append('g')
                             
                         }
                         lastbuttonisBack = false; // now it doesn't have to re-push the same node back again 
-                        let newRoot = d3.hierarchy(path[path.length-1].data)
-                            .sum(d => +d.word_count || 2000)
-                            .sort((a, b) => b.value - a.value);
-                        treemap(newRoot);
-                        update(newRoot);}
+                        if (path.length >1){
+                            let newRoot = d3.hierarchy(path[path.length-1].data)
+                                .sum(d => +d.word_count || 2000)
+                                .sort((a, b) => b.value - a.value);
+                            treemap(newRoot);
+                            
+                            update(newRoot);}
+                             else{
+                                path.push(targetNode);
+                                console.log(path)
+    
+                                let newRoot = d3.hierarchy(path[path.length-1].data)
+                                .sum(d => +d.word_count || 2000)
+                                .sort((a, b) => b.value - a.value);
+                            treemap(newRoot);
+                            
+                            update(newRoot);}}
                         
                     }else if (view.type === 'lessbroad') {
             
@@ -419,4 +431,5 @@ const clippedGroup = svg.append('g')
     treemap(initialRoot);
     update(initialRoot);
 }
+
 
