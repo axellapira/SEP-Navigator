@@ -3,18 +3,18 @@ body {
   font-family: "Source Sans Pro", Arial, sans-serif;
   margin: 20px;
   /*gradient background */
-  background: linear-gradient(to bottom, #a6283b, white 90%);
-  background-attachment: fixed; /* Keep the background fixed relative to scrolling */
+  background: linear-gradient(to bottom, #8c1515, white 90%);
+  background-attachment: fixed; /* Keep the background fixed even when scrolling*/
   background-size: cover;
   /* in case all else fails keep it red for transitions to next website*/
-  background-color: #a6283b;
+  background-color: #8c1515;
 }
 
 h1 {
   text-align: center;
 }
 
-/* Flex container to hold the views side by side */
+/* flex container to hold the views side by side */
 .chart-wrapper {
   display: flex;
   flex-direction: row; /* Align items side by side */
@@ -89,7 +89,7 @@ h1 {
   appearance: none;
   width: 300px;
   height: 8px;
-  background: linear-gradient(to right, #a6283b, #cf4848); /* gradient for track color */
+  background: linear-gradient(to right, #8c1515, #cf4848); /* gradient for track color */
   border-radius: 5px; /* Rounded corners */
   outline: none;
   opacity: 0.8; /* Slight transparency */
@@ -105,7 +105,7 @@ h1 {
   appearance: none;
   width: 16px;
   height: 16px;
-  background: #a6283b; /* Change the thumb color */
+  background: #8c1515; /* Change the thumb color */
   border-radius: 50%; /* Make the thumb circular */
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add shadow for better visibility */
@@ -114,7 +114,7 @@ h1 {
 #zoom-slider::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  background: #a6283b; 
+  background: #8c1515; 
   border-radius: 50%; 
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
@@ -123,7 +123,7 @@ h1 {
 #zoom-slider::-ms-thumb {
   width: 16px;
   height: 16px;
-  background: #a6283b; 
+  background: #8c1515; 
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
@@ -165,7 +165,7 @@ h1 {
 /*help button*/
 #help-button {
   background-color: #f0f0f0;
-  border: 2px solid #6f6f6f;
+  border: 2px solid #282828;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -268,3 +268,4 @@ h1 {
   font-size: 14px;              /* Slightly smaller font size */
   border-radius: 15px;
 }
+
