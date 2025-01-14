@@ -1,18 +1,17 @@
-// index.js
+
 import { drawTreeMap } from './tree_map.js';
 import { drawLargeNetwork } from './large_network.js';
 import globalState from './globalState.js';
 
-// etc...
 
-// Initialize the visualizations
+// Initialise the visualisations
 function initializeVisualizations() {
   // Load the data
   d3.json('data.json').then((data) => {
-      // Draw the Treemap
+      // treemap
       drawTreeMap(data, '#treeMapContainer');
 
-      // Draw the Large Network
+      // network
       drawLargeNetwork(data, '#largeNetworkContainer');
 
       globalState.update({
@@ -44,7 +43,9 @@ helpOverlay.addEventListener("click", (event) => {
     }
 });
 
-// Initialize all visualizations when the document is ready
+// Initialise
 initializeVisualizations();
+
+
 
 
