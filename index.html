@@ -357,7 +357,7 @@
       // traffic lights, dock with magnification, persistence.
       // ===================================================================
       (function() {
-        const STORAGE_KEY = 'sep-windows-v3';
+        const STORAGE_KEY = 'sep-windows-v4';
         const desktop = document.getElementById('desktop');
         const dockInner = document.getElementById('dockInner');
         const dockMinimized = document.getElementById('dockMinimized');
@@ -746,6 +746,13 @@
             win.style.height = cfg.height + 'px';
             win.dataset.state = cfg.state || 'normal';
             applyState(win);
+          });
+          // Apply initial state for any window NOT covered by defaultLayout
+          // (e.g. the content windows with data-state="closed" in HTML)
+          allWindows().forEach(win => {
+            if (!layout.find(c => c.id === win.id)) {
+              applyState(win);
+            }
           });
         }
         mainWindows().forEach((w, i) => { w.style.zIndex = 10 + i; });
