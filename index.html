@@ -2,30 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
-    <title>SEP Network Visualisation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>SEP Navigator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/styles.css"/>
-    
+
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
-<body>
-    <div id="title-container">
-        <img src="SEP-LOGO.jpg" alt="SEP Logo" id="sep-logo">
-        <h1>Stanford Encyclopedia of Philosophy Navigator </h1>
-        <button id="help-button" aria-label="Help">?</button>
+<body class="os">
+
+    <!-- =========================== TOP MENU BAR =========================== -->
+    <div id="menubar" class="menubar">
+      <div class="menubar-left">
+        <span class="menubar-logo" aria-hidden="true">
+          <!-- A leaf/apple-ish glyph; not actually an apple logo -->
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff">
+            <path d="M12 3.5c1.7 0 3.4 .8 4.2 1.9-1.5.2-3 1.6-3 3.3 1.8 0 3.3-1.4 3.4-3.1 1.3 1.1 1.9 3 .7 4.7-.6.9-1.3 1.4-1.3 2.6 0 1.3 1 2.2 1.9 2.7-.6 1.4-1.2 2.7-2.5 3.5-1 .6-2 .4-2.7 .1-.7-.3-1.3-.5-2-.2-.6.2-1.3.7-2.5.4-1.4-.4-2.6-2-3.4-3.8-1.5-3.5-.4-7.6 2-9 1.1-.6 2.5-.7 3.4-.3.5.2 1 .3 1.4.2.2-.6.6-2.5 .4-3z"/>
+          </svg>
+        </span>
+        <span class="menubar-app">SEP Navigator</span>
+        <span class="menubar-item" data-menu="file">File</span>
+        <span class="menubar-item" data-menu="view">View</span>
+        <span class="menubar-item" data-menu="window">Window</span>
+        <span class="menubar-item" data-menu="help">Help</span>
+      </div>
+      <div class="menubar-right">
+        <span class="menubar-icon" title="Wi-Fi">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1"/></svg>
+        </span>
+        <span class="menubar-icon" title="Battery">
+          <svg width="22" height="14" viewBox="0 0 28 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="2" width="22" height="10" rx="2"/><rect x="3" y="4" width="14" height="6" fill="currentColor" stroke="none"/><rect x="24" y="5" width="2" height="4" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="menubar-clock" id="menubarClock">Mon · 12:00</span>
+      </div>
     </div>
+
+    <!-- =========================== STANFORD HEADER STRIP (kept as page identity) =========================== -->
+    <header id="title-container">
+        <div id="title-left">
+            <img src="SEP-LOGO.jpg" alt="SEP Logo" id="sep-logo">
+            <h1>Stanford Encyclopedia of Philosophy Navigator</h1>
+        </div>
+        <div id="title-right">
+            <button id="help-button" aria-label="Help">?</button>
+        </div>
+    </header>
+
     <div id="help-overlay" class="hidden">
-        <!-- all the help tools -->
         <div class="help-box" style="top: 600px; left: 20px;">
             <p>Click on the individual nodes to open a new tab to that article!</p>
             <div class="arrowtop"></div>
         </div>
         <div class="help-box-title" style="top: 30px; left: 100px;">
-            <p>This is the <strong>Treemap View</strong>. It enables you to see the categories </br> and sub-categories and where articles are positioned in the hierarchy </p>
+            <p>This is the <strong>Treemap View</strong>. It enables you to see the categories <br/> and sub-categories and where articles are positioned in the hierarchy</p>
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 200px; left: 150px;">
-            <p>Click on sub-categories to only expand </br>and only view the articles within that section!</p>
+            <p>Click on sub-categories to only expand <br/>and only view the articles within that section!</p>
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 400px; left: 300px;">
@@ -33,11 +68,11 @@
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 680px; left: 820px;">
-            <p>Click on the individual nodes to only view them +whichever other node they cite/cites them!</p>
+            <p>Click on the individual nodes to only view them + whichever other node they cite/cites them!</p>
             <div class="arrowtop"></div>
         </div>
         <div class="help-box-title" style="top: 30px; left: 850px;">
-            <p>This is the <strong>Network View</strong>. It enables you to see the links between article and the articles it cites/mentions in the SEP. The size of the nodes is proportional to the number of mentions/citations, and at all times the 10 largest nodes have their names shown. </p>
+            <p>This is the <strong>Network View</strong>. It enables you to see the links between article and the articles it cites/mentions in the SEP. The size of the nodes is proportional to the number of mentions/citations, and at all times the 10 largest nodes have their names shown.</p>
             <div class="arrow"></div>
         </div>
         <div class="help-box" style="top: 240px; left: 800px;">
@@ -49,42 +84,692 @@
             <div class="arrow"></div>
         </div>
     </div>
-    <!-- flex wrapper for side by side views -->
-    <div class="chart-wrapper">
-        <div id="treeMapContainer" class="chart-container">
-            <div class="title-and-controls">
-            <h2>Articles Taxonomy</h2>
-            <div id="controls"></div>
-        </div>
-    </div>
-        <div id="largeNetworkContainer" class="chart-container">
-            <div class = "titleAndcontrolsofNetwork">
-                <h2>Articles Citations/Mentions</h2>
-            <!-- dropdowns -->
-                <div >
-                    <label for="category-select" id = "cat-label">Top Category: </label>
-                    <select id="category-select">
-                        <option value="All">All</option>
-                    </select>
 
-                    <label for="subcategory-select" style="margin-left: 10px;" id = "subcat-label">Subcategory: </label>
-                    <select id="subcategory-select">
-                         <option value="All">All</option>
-                    <!-- populated on run -->
-                    </select>
-                </div>
+    <!-- =========================== DESKTOP =========================== -->
+    <main>
+        <div class="desktop" id="desktop">
+
+          <!-- Wallpaper watermark -->
+          <div class="desktop-watermark" aria-hidden="true">
+            <img src="SEP-LOGO.jpg" alt="">
+            <div class="watermark-label">Stanford · Encyclopedia · Philosophy</div>
+          </div>
+
+          <!-- Desktop file icons -->
+          <div class="desktop-icons" id="desktopIcons">
+            <button class="desk-icon" data-opens="aboutWindow" style="top: 12px; left: 14px;">
+              <span class="icon-glyph icon-doc">
+                <svg viewBox="0 0 48 60" width="44" height="54">
+                  <defs>
+                    <linearGradient id="docG" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#fffefb"/>
+                      <stop offset="100%" stop-color="#f1e6df"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M4 2 h28 l12 12 v44 a2 2 0 0 1 -2 2 h-38 a2 2 0 0 1 -2 -2 v-54 a2 2 0 0 1 2 -2z" fill="url(#docG)" stroke="#c9b3ad" stroke-width="1"/>
+                  <path d="M32 2 v12 h12" fill="none" stroke="#c9b3ad" stroke-width="1"/>
+                  <line x1="9" y1="26" x2="34" y2="26" stroke="#bfa9a3" stroke-width="1"/>
+                  <line x1="9" y1="32" x2="34" y2="32" stroke="#bfa9a3" stroke-width="1"/>
+                  <line x1="9" y1="38" x2="28" y2="38" stroke="#bfa9a3" stroke-width="1"/>
+                  <line x1="9" y1="44" x2="32" y2="44" stroke="#bfa9a3" stroke-width="1"/>
+                </svg>
+              </span>
+              <span class="icon-label">About.txt</span>
+            </button>
+
+            <button class="desk-icon" data-opens="howToWindow" style="top: 12px; left: 110px;">
+              <span class="icon-glyph icon-doc">
+                <svg viewBox="0 0 48 60" width="44" height="54">
+                  <path d="M4 2 h28 l12 12 v44 a2 2 0 0 1 -2 2 h-38 a2 2 0 0 1 -2 -2 v-54 a2 2 0 0 1 2 -2z" fill="url(#docG)" stroke="#c9b3ad" stroke-width="1"/>
+                  <path d="M32 2 v12 h12" fill="none" stroke="#c9b3ad" stroke-width="1"/>
+                  <circle cx="22" cy="32" r="8" fill="none" stroke="#8c1515" stroke-width="2"/>
+                  <path d="M22 36 v2" stroke="#8c1515" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M19 30 a3 3 0 1 1 5 2.4 c-.5 .4 -1 .8 -1 1.6" stroke="#8c1515" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="icon-label">How to use</span>
+            </button>
+
+            <button class="desk-icon" data-link="https://plato.stanford.edu" style="top: 12px; left: 206px;">
+              <span class="icon-glyph icon-link">
+                <svg viewBox="0 0 56 56" width="48" height="48">
+                  <defs>
+                    <radialGradient id="globeG" cx="0.4" cy="0.35" r="0.7">
+                      <stop offset="0%" stop-color="#cf4848"/>
+                      <stop offset="100%" stop-color="#6e0f0f"/>
+                    </radialGradient>
+                  </defs>
+                  <circle cx="28" cy="28" r="22" fill="url(#globeG)" stroke="#5a0a0a" stroke-width="1"/>
+                  <ellipse cx="28" cy="28" rx="22" ry="9" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="1"/>
+                  <ellipse cx="28" cy="28" rx="22" ry="16" fill="none" stroke="#fff" stroke-opacity="0.3" stroke-width="1"/>
+                  <line x1="6" y1="28" x2="50" y2="28" stroke="#fff" stroke-opacity="0.5"/>
+                  <line x1="28" y1="6" x2="28" y2="50" stroke="#fff" stroke-opacity="0.5"/>
+                </svg>
+              </span>
+              <span class="icon-label">plato.stanford.edu</span>
+            </button>
+
+            <button class="desk-icon" data-opens="creditsWindow" style="top: 130px; left: 14px;">
+              <span class="icon-glyph icon-folder">
+                <svg viewBox="0 0 56 44" width="50" height="40">
+                  <defs>
+                    <linearGradient id="folderG" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#d1b48f"/>
+                      <stop offset="100%" stop-color="#a07e5a"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M2 8 a2 2 0 0 1 2 -2 h16 l4 4 h28 a2 2 0 0 1 2 2 v28 a2 2 0 0 1 -2 2 h-50 a2 2 0 0 1 -2 -2z" fill="url(#folderG)" stroke="#7c5b3a"/>
+                </svg>
+              </span>
+              <span class="icon-label">Credits</span>
+            </button>
+          </div>
+
+          <!-- Window: TreeMap -->
+          <section id="treeMapContainer" class="window chart-container" data-window-title="Articles Taxonomy" data-window-icon="treemap">
+              <div class="card-header window-header">
+                  <div class="traffic-lights">
+                      <button class="tl tl-close" data-action="close" aria-label="Close"></button>
+                      <button class="tl tl-min" data-action="minimize" aria-label="Minimize"></button>
+                      <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
+                  </div>
+                  <h2>Articles Taxonomy</h2>
+                  <div class="card-controls">
+                      <div id="controls"></div>
+                  </div>
+              </div>
+              <div class="card-body" id="treeMapBody"></div>
+              <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+          </section>
+
+          <!-- Window: Large Network -->
+          <section id="largeNetworkContainer" class="window chart-container" data-window-title="Citations Network" data-window-icon="network">
+              <div class="card-header window-header">
+                  <div class="traffic-lights">
+                      <button class="tl tl-close" data-action="close" aria-label="Close"></button>
+                      <button class="tl tl-min" data-action="minimize" aria-label="Minimize"></button>
+                      <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
+                  </div>
+                  <h2>Articles Citations/Mentions</h2>
+                  <div class="card-controls">
+                      <label for="category-select" id="cat-label">Top Category:</label>
+                      <select id="category-select">
+                          <option value="All">All</option>
+                      </select>
+                      <label for="subcategory-select" id="subcat-label">Subcategory:</label>
+                      <select id="subcategory-select">
+                          <option value="All">All</option>
+                      </select>
+                  </div>
+              </div>
+              <div class="card-body" id="largeNetworkBody"></div>
+              <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+          </section>
+
+          <!-- Content windows for desktop files (hidden by default) -->
+          <section id="aboutWindow" class="window window-text" data-window-title="About SEP Navigator" data-window-icon="doc" data-state="closed" style="width: 480px; height: 340px;">
+            <div class="card-header window-header">
+              <div class="traffic-lights">
+                <button class="tl tl-close" data-action="close" aria-label="Close"></button>
+                <button class="tl tl-min" data-action="minimize" aria-label="Minimize"></button>
+                <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
+              </div>
+              <h2>About SEP Navigator</h2>
+              <div class="card-controls"></div>
             </div>
+            <div class="card-body">
+              <h3>What is this?</h3>
+              <p>SEP Navigator is a visual map of the <em>Stanford Encyclopedia of Philosophy</em>. It lets you explore ~1,800 entries by their philosophical hierarchy and by who cites whom.</p>
+              <h3>Two views</h3>
+              <p><strong>Taxonomy</strong> — a treemap of philosophy's branches: History, Moral, Metaphysics, Knowledge, Logic. Drill in, drill back out.</p>
+              <p><strong>Citations</strong> — a network graph where each node is an article and each line a citation. Bigger nodes are more cited.</p>
+              <h3>Tips</h3>
+              <p>Drag windows by their title bar. Resize from the bottom-right. Hit the green light to maximize. Hit yellow to send a window to the dock.</p>
+            </div>
+            <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+          </section>
+
+          <section id="howToWindow" class="window window-text" data-window-title="How to use" data-window-icon="doc" data-state="closed" style="width: 460px; height: 360px;">
+            <div class="card-header window-header">
+              <div class="traffic-lights">
+                <button class="tl tl-close" data-action="close" aria-label="Close"></button>
+                <button class="tl tl-min" data-action="minimize" aria-label="Minimize"></button>
+                <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
+              </div>
+              <h2>How to use</h2>
+              <div class="card-controls"></div>
+            </div>
+            <div class="card-body">
+              <h3>Taxonomy view</h3>
+              <p>Click any cell to dive in. Hit <em>Back</em> to step out, <em>Reset</em> to return to the top. Article cells open the actual SEP page.</p>
+              <h3>Citations view</h3>
+              <p>Filter by Top Category and Subcategory. Use the search box to jump to any article. The 10 largest nodes are always labelled.</p>
+              <h3>Window controls</h3>
+              <p>Three buttons top-left of each window: close, minimize to dock, maximize. Drag the bottom-right corner to resize. Drag the title bar to move.</p>
+              <h3>Dock</h3>
+              <p>Anything minimized or closed lands in the dock at the bottom. Click to bring it back.</p>
+            </div>
+            <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+          </section>
+
+          <section id="creditsWindow" class="window window-text" data-window-title="Credits" data-window-icon="folder" data-state="closed" style="width: 420px; height: 280px;">
+            <div class="card-header window-header">
+              <div class="traffic-lights">
+                <button class="tl tl-close" data-action="close" aria-label="Close"></button>
+                <button class="tl tl-min" data-action="minimize" aria-label="Minimize"></button>
+                <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
+              </div>
+              <h2>Credits</h2>
+              <div class="card-controls"></div>
+            </div>
+            <div class="card-body">
+              <h3>Built by</h3>
+              <p>Axel La Pira — Stanford '25</p>
+              <h3>Data</h3>
+              <p>Scraped from the <em>Stanford Encyclopedia of Philosophy</em> · plato.stanford.edu</p>
+              <h3>Made with</h3>
+              <p>D3.js · vanilla JavaScript</p>
+              <p style="margin-top: 14px; color: var(--text-faint);">© 2026 SEP Navigator</p>
+            </div>
+            <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+          </section>
+
         </div>
+    </main>
+
+    <!-- =========================== DOCK =========================== -->
+    <div id="dock" class="dock is-visible" aria-label="Dock">
+      <div class="dock-inner" id="dockInner">
+        <!-- Persistent app icons (taxonomy + network) -->
+        <button class="dock-app" data-target="treeMapContainer" title="Articles Taxonomy">
+          <span class="dock-icon dock-icon-treemap">
+            <svg viewBox="0 0 48 48" width="44" height="44">
+              <rect x="3" y="3" width="26" height="26" rx="4" fill="#db4848"/>
+              <rect x="31" y="3" width="14" height="14" rx="3" fill="#E69300"/>
+              <rect x="31" y="19" width="14" height="10" rx="3" fill="#65C977"/>
+              <rect x="3" y="31" width="18" height="14" rx="3" fill="#B874D9"/>
+              <rect x="23" y="31" width="22" height="14" rx="3" fill="#5CAFFD"/>
+            </svg>
+          </span>
+          <span class="dock-dot-indicator" aria-hidden="true"></span>
+        </button>
+
+        <button class="dock-app" data-target="largeNetworkContainer" title="Citations Network">
+          <span class="dock-icon dock-icon-network">
+            <svg viewBox="0 0 48 48" width="44" height="44">
+              <defs>
+                <linearGradient id="netG" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#fdfaf6"/>
+                  <stop offset="100%" stop-color="#e9d6cf"/>
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="44" height="44" rx="9" fill="url(#netG)"/>
+              <line x1="14" y1="14" x2="34" y2="14" stroke="#8c1515" stroke-width="1.4"/>
+              <line x1="14" y1="14" x2="24" y2="34" stroke="#8c1515" stroke-width="1.4"/>
+              <line x1="34" y1="14" x2="24" y2="34" stroke="#8c1515" stroke-width="1.4"/>
+              <line x1="24" y1="34" x2="34" y2="36" stroke="#8c1515" stroke-width="1.4"/>
+              <circle cx="14" cy="14" r="3.5" fill="#db4848"/>
+              <circle cx="34" cy="14" r="3.5" fill="#E69300"/>
+              <circle cx="24" cy="34" r="4.5" fill="#5CAFFD"/>
+              <circle cx="34" cy="36" r="2.5" fill="#65C977"/>
+            </svg>
+          </span>
+          <span class="dock-dot-indicator" aria-hidden="true"></span>
+        </button>
+
+        <button class="dock-app" data-opens="aboutWindow" title="About">
+          <span class="dock-icon dock-icon-doc">
+            <svg viewBox="0 0 48 48" width="40" height="40">
+              <path d="M10 4 h22 l10 10 v30 a2 2 0 0 1 -2 2 h-30 a2 2 0 0 1 -2 -2 v-38 a2 2 0 0 1 2 -2z" fill="#fff" stroke="#c9b3ad"/>
+              <path d="M32 4 v10 h10" fill="none" stroke="#c9b3ad"/>
+              <line x1="14" y1="22" x2="36" y2="22" stroke="#bfa9a3"/>
+              <line x1="14" y1="28" x2="36" y2="28" stroke="#bfa9a3"/>
+              <line x1="14" y1="34" x2="30" y2="34" stroke="#bfa9a3"/>
+            </svg>
+          </span>
+        </button>
+
+        <div class="dock-separator"></div>
+
+        <!-- Slot for minimized window thumbnails (dynamic) -->
+        <div class="dock-minimized" id="dockMinimized"></div>
+
+        <div class="dock-separator dock-separator-trash"></div>
+
+        <button class="dock-app dock-trash" id="dockTrash" title="Trash (drag closed files here)">
+          <span class="dock-icon">
+            <svg viewBox="0 0 48 48" width="40" height="40">
+              <rect x="10" y="14" width="28" height="30" rx="3" fill="#e8e2dd" stroke="#a89c93"/>
+              <rect x="8" y="10" width="32" height="5" rx="2" fill="#cfc4bd" stroke="#a89c93"/>
+              <rect x="20" y="7" width="8" height="4" rx="1.5" fill="#cfc4bd" stroke="#a89c93"/>
+              <line x1="18" y1="20" x2="18" y2="38" stroke="#8b7f76" stroke-width="1.4"/>
+              <line x1="24" y1="20" x2="24" y2="38" stroke="#8b7f76" stroke-width="1.4"/>
+              <line x1="30" y1="20" x2="30" y2="38" stroke="#8b7f76" stroke-width="1.4"/>
+            </svg>
+          </span>
+        </button>
+      </div>
     </div>
-    <footer id="credits">
-        <p>© 2025 SEP Navigator. Created by Axel La Pira.</p>
-      </footer>
-      
- 
-    
-    <script type = module src="js/index.js"></script>
+
+    <script>
+      // ===================================================================
+      // Mac-style desktop: menubar clock, file icons, draggable windows,
+      // traffic lights, dock with magnification, persistence.
+      // ===================================================================
+      (function() {
+        const STORAGE_KEY = 'sep-windows-v3';
+        const desktop = document.getElementById('desktop');
+        const dockInner = document.getElementById('dockInner');
+        const dockMinimized = document.getElementById('dockMinimized');
+        let zCounter = 10;
+
+        const allWindows = () => Array.from(desktop.querySelectorAll('.window'));
+        const mainWindows = () => Array.from(desktop.querySelectorAll('.window.chart-container'));
+
+        // ----- Menubar clock -----
+        function updateClock() {
+          const now = new Date();
+          const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          const hours = now.getHours();
+          const minutes = String(now.getMinutes()).padStart(2,'0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const h12 = ((hours + 11) % 12) + 1;
+          document.getElementById('menubarClock').textContent = `${days[now.getDay()]} ${h12}:${minutes} ${ampm}`;
+        }
+        updateClock();
+        setInterval(updateClock, 30 * 1000);
+
+        // ----- Default tiled layout for the two main windows -----
+        function defaultLayout() {
+          const rect = desktop.getBoundingClientRect();
+          const gap = 18;
+          const padding = 18;
+          const leftIconsBuffer = 140; // leave space on the left edge for file icons
+          const usableW = rect.width - padding * 2 - gap - leftIconsBuffer;
+          const w = Math.floor(usableW / 2);
+          const h = Math.max(520, rect.height - padding * 2);
+          return [
+            { id: 'treeMapContainer',      left: padding + leftIconsBuffer,         top: padding, width: w, height: h, state: 'normal' },
+            { id: 'largeNetworkContainer', left: padding + leftIconsBuffer + w + gap, top: padding, width: w, height: h, state: 'normal' }
+          ];
+        }
+
+        function loadLayout() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return null;
+            const data = JSON.parse(raw);
+            if (!Array.isArray(data)) return null;
+            return data;
+          } catch (_) { return null; }
+        }
+
+        function saveLayout() {
+          const data = allWindows().map(w => ({
+            id: w.id,
+            left: parseFloat(w.style.left) || 0,
+            top: parseFloat(w.style.top) || 0,
+            width: parseFloat(w.style.width) || 600,
+            height: parseFloat(w.style.height) || 400,
+            state: w.dataset.state || 'normal'
+          }));
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_) {}
+        }
+
+        function bringToFront(win) {
+          zCounter += 1;
+          win.style.zIndex = zCounter;
+          allWindows().forEach(w => w.classList.toggle('is-focused', w === win));
+        }
+
+        function applyState(win, animate) {
+          win.classList.remove('is-minimized','is-maximized','is-closed','anim-genie','anim-open');
+          const s = win.dataset.state || 'normal';
+          if (animate) win.classList.add(s === 'minimized' || s === 'closed' ? 'anim-genie' : 'anim-open');
+          if (s === 'minimized') win.classList.add('is-minimized');
+          else if (s === 'maximized') win.classList.add('is-maximized');
+          else if (s === 'closed') win.classList.add('is-closed');
+          // remove animation class after it plays
+          if (animate) setTimeout(() => win.classList.remove('anim-genie','anim-open'), 360);
+          rebuildDock();
+          saveLayout();
+        }
+
+        function openWindow(win) {
+          if (win.dataset.state === 'normal') {
+            bringToFront(win);
+            return;
+          }
+          // If it has no size yet, give it a default centered
+          if (!win.style.width) win.style.width = '480px';
+          if (!win.style.height) win.style.height = '340px';
+          if (!win.style.left || !win.style.top) {
+            const rect = desktop.getBoundingClientRect();
+            const w = parseFloat(win.style.width);
+            const h = parseFloat(win.style.height);
+            win.style.left = Math.max(20, (rect.width - w) / 2) + 'px';
+            win.style.top = Math.max(20, (rect.height - h) / 2 - 20) + 'px';
+          }
+          win.dataset.state = 'normal';
+          applyState(win, true);
+          bringToFront(win);
+        }
+
+        function setMaximized(win) {
+          if (win.dataset.state === 'maximized') {
+            const prev = win._prevRect;
+            if (prev) {
+              win.style.left = prev.left + 'px';
+              win.style.top = prev.top + 'px';
+              win.style.width = prev.width + 'px';
+              win.style.height = prev.height + 'px';
+            }
+            win.dataset.state = 'normal';
+          } else {
+            win._prevRect = {
+              left: parseFloat(win.style.left) || 0,
+              top: parseFloat(win.style.top) || 0,
+              width: parseFloat(win.style.width) || 600,
+              height: parseFloat(win.style.height) || 400
+            };
+            const rect = desktop.getBoundingClientRect();
+            win.style.left = '0px';
+            win.style.top = '0px';
+            win.style.width = rect.width + 'px';
+            win.style.height = rect.height + 'px';
+            win.dataset.state = 'maximized';
+          }
+          applyState(win);
+          bringToFront(win);
+        }
+
+        function setMinimized(win) {
+          win.dataset.state = 'minimized';
+          applyState(win, true);
+        }
+
+        function setClosed(win) {
+          win.dataset.state = 'closed';
+          applyState(win, true);
+        }
+
+        function rebuildDock() {
+          dockMinimized.innerHTML = '';
+          let anyMinimized = false;
+          allWindows().forEach(win => {
+            const s = win.dataset.state || 'normal';
+            if (s === 'minimized') {
+              anyMinimized = true;
+              const item = document.createElement('button');
+              item.className = 'dock-min-item';
+              item.title = 'Restore ' + win.dataset.windowTitle;
+              item.innerHTML = '<span class="mini-thumb"></span><span class="dock-label-small">' + win.dataset.windowTitle + '</span>';
+              item.addEventListener('click', () => openWindow(win));
+              dockMinimized.appendChild(item);
+            }
+          });
+          dockMinimized.classList.toggle('has-items', anyMinimized);
+
+          // Update "running" dot indicators on app icons
+          document.querySelectorAll('.dock-app').forEach(app => {
+            const target = app.getAttribute('data-target');
+            const opens = app.getAttribute('data-opens');
+            const id = target || opens;
+            if (!id) return;
+            const win = document.getElementById(id);
+            if (!win) return;
+            const running = win.dataset.state !== 'closed';
+            app.classList.toggle('is-running', running);
+          });
+        }
+
+        // ----- Traffic lights -----
+        desktop.addEventListener('click', function(e) {
+          const tl = e.target.closest('.tl');
+          if (!tl) return;
+          const win = tl.closest('.window');
+          if (!win) return;
+          const action = tl.dataset.action;
+          if (action === 'close') setClosed(win);
+          else if (action === 'minimize') setMinimized(win);
+          else if (action === 'maximize') setMaximized(win);
+        });
+
+        // Double-click header => toggle maximize
+        desktop.addEventListener('dblclick', function(e) {
+          const header = e.target.closest('.window-header');
+          if (!header) return;
+          if (e.target.closest('.card-controls') || e.target.closest('.traffic-lights')) return;
+          const win = header.closest('.window');
+          setMaximized(win);
+        });
+
+        // ----- Drag-to-move -----
+        let drag = null;
+        function startDrag(e, win) {
+          if (win.dataset.state === 'maximized') return;
+          if (e.target.closest('.card-controls') || e.target.closest('.traffic-lights')) return;
+          const rect = win.getBoundingClientRect();
+          const deskRect = desktop.getBoundingClientRect();
+          drag = {
+            win,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+            deskRect
+          };
+          bringToFront(win);
+          document.body.style.userSelect = 'none';
+          document.body.style.cursor = 'grabbing';
+          e.preventDefault();
+        }
+
+        desktop.addEventListener('mousedown', function(e) {
+          const win = e.target.closest('.window');
+          if (!win) return;
+          if (e.target.closest('.window-header') && !e.target.closest('.card-controls') && !e.target.closest('.traffic-lights')) {
+            startDrag(e, win);
+          } else {
+            bringToFront(win);
+          }
+        });
+
+        // ----- Resize -----
+        let resize = null;
+        desktop.addEventListener('mousedown', function(e) {
+          const h = e.target.closest('.resize-handle');
+          if (!h) return;
+          const win = h.closest('.window');
+          if (win.dataset.state === 'maximized') return;
+          const rect = win.getBoundingClientRect();
+          resize = {
+            win,
+            startX: e.clientX,
+            startY: e.clientY,
+            startW: rect.width,
+            startH: rect.height
+          };
+          bringToFront(win);
+          document.body.style.userSelect = 'none';
+          document.body.style.cursor = 'nwse-resize';
+          e.preventDefault();
+          e.stopPropagation();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+          if (drag) {
+            const newLeft = e.clientX - drag.deskRect.left - drag.offsetX;
+            const newTop = e.clientY - drag.deskRect.top - drag.offsetY;
+            drag.win.style.left = Math.max(-40, newLeft) + 'px';
+            drag.win.style.top = Math.max(0, newTop) + 'px';
+          }
+          if (resize) {
+            const w = Math.max(260, e.clientX - resize.startX + resize.startW);
+            const h = Math.max(200, e.clientY - resize.startY + resize.startH);
+            resize.win.style.width = w + 'px';
+            resize.win.style.height = h + 'px';
+          }
+        });
+
+        document.addEventListener('mouseup', function() {
+          if (drag) {
+            drag = null;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            saveLayout();
+          }
+          if (resize) {
+            resize = null;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            saveLayout();
+          }
+        });
+
+        // ----- Desktop icons: double-click to open -----
+        desktop.addEventListener('dblclick', function(e) {
+          const ic = e.target.closest('.desk-icon');
+          if (!ic) return;
+          if (ic.dataset.link) {
+            window.open(ic.dataset.link, '_blank');
+            return;
+          }
+          const opens = ic.dataset.opens;
+          if (opens) {
+            const win = document.getElementById(opens);
+            if (win) openWindow(win);
+          }
+        });
+        // Also support single-click select + visual feedback
+        desktop.addEventListener('click', function(e) {
+          const ic = e.target.closest('.desk-icon');
+          document.querySelectorAll('.desk-icon').forEach(i => i.classList.remove('is-selected'));
+          if (ic) ic.classList.add('is-selected');
+        });
+
+        // ----- Dock app clicks -----
+        document.getElementById('dockInner').addEventListener('click', function(e) {
+          const app = e.target.closest('.dock-app');
+          if (!app) return;
+          // Trash handler — Kant easter egg
+          if (app.id === 'dockTrash') {
+            if (confirm('Are you sure you want to open Trash?')) {
+              window.open('https://plato.stanford.edu/archives/win2021/entries/kant/', '_blank');
+            }
+            return;
+          }
+          const targetId = app.dataset.target || app.dataset.opens;
+          if (!targetId) return;
+          const win = document.getElementById(targetId);
+          if (!win) return;
+          openWindow(win);
+          // Tiny bounce animation
+          app.classList.remove('bounce');
+          void app.offsetWidth;
+          app.classList.add('bounce');
+        });
+
+        // ----- Dock magnification on hover -----
+        const dockEl = document.getElementById('dock');
+        dockEl.addEventListener('mousemove', function(e) {
+          const items = dockEl.querySelectorAll('.dock-app, .dock-min-item');
+          items.forEach(it => {
+            const r = it.getBoundingClientRect();
+            const cx = r.left + r.width/2;
+            const dist = Math.abs(e.clientX - cx);
+            const maxDist = 110;
+            const t = Math.max(0, 1 - dist / maxDist);
+            const scale = 1 + t * 0.55;
+            it.style.transform = `translateY(${-t * 10}px) scale(${scale})`;
+          });
+        });
+        dockEl.addEventListener('mouseleave', function() {
+          dockEl.querySelectorAll('.dock-app, .dock-min-item').forEach(it => {
+            it.style.transform = '';
+          });
+        });
+
+        // ----- Menubar items (visual only for now) -----
+        document.querySelectorAll('.menubar-item').forEach(mi => {
+          mi.addEventListener('click', function() {
+            if (this.dataset.menu === 'help') {
+              document.getElementById('help-overlay').classList.toggle('hidden');
+            } else if (this.dataset.menu === 'window') {
+              // Cascade-arrange the two main windows
+              const rect = desktop.getBoundingClientRect();
+              const wins = mainWindows();
+              wins.forEach((w, i) => {
+                w.dataset.state = 'normal';
+                w.style.width = '720px';
+                w.style.height = '560px';
+                w.style.left = (60 + i * 40) + 'px';
+                w.style.top = (40 + i * 36) + 'px';
+                applyState(w, true);
+                bringToFront(w);
+              });
+            }
+          });
+        });
+
+        // ----- Init -----
+        const saved = loadLayout();
+        if (saved && saved.length) {
+          saved.forEach(cfg => {
+            const win = document.getElementById(cfg.id);
+            if (!win) return;
+            win.style.left = cfg.left + 'px';
+            win.style.top = cfg.top + 'px';
+            win.style.width = cfg.width + 'px';
+            win.style.height = cfg.height + 'px';
+            win.dataset.state = cfg.state || 'normal';
+            applyState(win);
+          });
+          // Make sure main windows exist even if not in saved
+          mainWindows().forEach((win, i) => {
+            if (!win.style.width) {
+              const def = defaultLayout()[i];
+              win.style.left = def.left + 'px';
+              win.style.top = def.top + 'px';
+              win.style.width = def.width + 'px';
+              win.style.height = def.height + 'px';
+              win.dataset.state = 'normal';
+              applyState(win);
+            }
+          });
+        } else {
+          const layout = defaultLayout();
+          layout.forEach(cfg => {
+            const win = document.getElementById(cfg.id);
+            if (!win) return;
+            win.style.left = cfg.left + 'px';
+            win.style.top = cfg.top + 'px';
+            win.style.width = cfg.width + 'px';
+            win.style.height = cfg.height + 'px';
+            win.dataset.state = cfg.state || 'normal';
+            applyState(win);
+          });
+        }
+        mainWindows().forEach((w, i) => { w.style.zIndex = 10 + i; });
+        bringToFront(mainWindows()[mainWindows().length - 1]);
+        rebuildDock();
+
+        // Recompute window sizes on viewport resize
+        let resizeTimer = null;
+        window.addEventListener('resize', function() {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            // Only nudge maximized windows to fit new size
+            allWindows().forEach(win => {
+              if (win.dataset.state === 'maximized') {
+                const r = desktop.getBoundingClientRect();
+                win.style.width = r.width + 'px';
+                win.style.height = r.height + 'px';
+              }
+            });
+          }, 80);
+        });
+      })();
+    </script>
+
+    <script type="module" src="js/index.js"></script>
 </body>
 </html>
-
-
-

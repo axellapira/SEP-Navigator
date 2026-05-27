@@ -9,10 +9,10 @@ function initializeVisualizations() {
   // Load the data
   d3.json('data.json').then((data) => {
       // treemap
-      drawTreeMap(data, '#treeMapContainer');
+      drawTreeMap(data, '#treeMapBody');
 
       // network
-      drawLargeNetwork(data, '#largeNetworkContainer');
+      drawLargeNetwork(data, '#largeNetworkBody');
 
       globalState.update({
         type: 'broad',

@@ -6,10 +6,19 @@ import globalState from './globalState.js';
     const width = (containerWidth - margin.left - margin.right);
     const height = 800 - margin.top - margin.bottom;
 
+    const breadcrumb = d3.select(container)
+        .append('div')
+        .attr('id', 'treemap-breadcrumb');
+
+    const svgW = width + margin.left + margin.right;
+    const svgH = height + margin.top + margin.bottom;
     const svg = d3.select(container)
   .append('svg')
-  .attr('width', width + margin.left + margin.right)
-  .attr('height', height + margin.top + margin.bottom);
+  .attr('viewBox', `0 0 ${svgW} ${svgH}`)
+  .attr('preserveAspectRatio', 'xMidYMid meet')
+  .style('width', '100%')
+  .style('height', `${svgH}px`)
+  .style('display', 'block');
 
 svg.append("defs")
   .append("clipPath")
@@ -154,32 +163,47 @@ const clippedGroup = svg.append('g')
 
         function getNodeText(d, currentRoot) {
             const relativeDepth = d.depth - currentRoot.depth;
-        
-            if (relativeDepth === 0 && d.data._originalDepth!=3 ) {
-                return d.data.name || 'Root'; // Current root node
+
+            if (relativeDepth === 0 && d.data._originalDepth != 3) {
+                return d.data.name || 'Root';
             }
-            if (relativeDepth === 0 && d.data._originalDepth==3) {
-                return d.data.name + " (Click to read the Article!!)"; // article view
+            if (relativeDepth === 0 && d.data._originalDepth == 3) {
+                return d.data.name;
             }
-            if (relativeDepth === 1 ) {
-                return d.data.name; // Direct children of the current view
+            if (relativeDepth === 1) {
+                return d.data.name;
             }
-            if (relativeDepth === 2 && d.data._originalDepth!=3 ){
-                return d.data.name ; // Grandchildren of the current view unless it's an article
+            if (relativeDepth === 2 && d.data._originalDepth != 3) {
+                return d.data.name;
             }
-            return ''; // hide text for nodes deeper than grandchildren
+            return '';
         }
         
         
 
     function getFontSize(d) {
         const depth = d.data._originalDepth;
-        if (depth === 0) return '20px';
-        if (depth === 1) return '16px';
-        if (depth === 2) return '12px';
+        // Scale font down progressively to fit cell width.
+        const cellW = d.x1 - d.x0;
+        const cellH = d.y1 - d.y0;
+        let base;
+        if (depth === 0) base = 20;
+        else if (depth === 1) base = 16;
+        else if (depth === 2) base = 13;
+        else base = 11;
+        // Shrink if cell is small.
+        if (cellW < 90 || cellH < 28) base = Math.min(base, 11);
+        if (cellW < 60 || cellH < 22) base = Math.min(base, 10);
+        return base + 'px';
+    }
 
-        
-        return '10px';
+    function truncateLabel(text, cellWidth, fontSizePx) {
+        if (!text) return '';
+        // Rough character-per-px estimate for current font.
+        const approxCharWidth = fontSizePx * 0.55;
+        const maxChars = Math.max(3, Math.floor((cellWidth - 10) / approxCharWidth));
+        if (text.length <= maxChars) return text;
+        return text.slice(0, Math.max(1, maxChars - 1)) + '…';
     }
 
     function getFontWeight(d) {
@@ -209,6 +233,8 @@ const clippedGroup = svg.append('g')
 
     function update(currentRoot) {
         treemap(currentRoot);
+        const breadcrumbParts = path.map(p => p.data.name);
+        breadcrumb.text('Path: ' + breadcrumbParts.join(' > '));
         const nodes = clippedGroup.selectAll('g.node')
   .data(currentRoot.descendants(), d => d.data.name);
 
@@ -227,24 +253,27 @@ const clippedGroup = svg.append('g')
             .attr('width', d => d.x1 - d.x0)
             .attr('height', d => d.y1 - d.y0)
             .attr('fill', getColor)
-            .attr('stroke', '#fff')
+            .attr('stroke', 'rgba(255,255,255,0.85)')
+            .attr('stroke-width', 1)
+            .attr('rx', d => d.data._originalDepth === 3 ? 3 : 2)
+            .attr('ry', d => d.data._originalDepth === 3 ? 3 : 2)
+            .style('cursor', d => (d.data.article_url || d.children) ? 'pointer' : 'default')
             .on('mouseover', function (event, d) {
                 if (d.data._originalDepth == 3){
                 tooltip.style('display', 'block')
                     .html(`
-                        <strong>${d.data.name + " (Click to read the article!)"}</strong><br/>
+                        <strong>${d.data.name}</strong><br/>
                         ${d.data.author ? `Author: ${d.data.author}<br/>` : ''}
-                        
+                        <em style="color:#8c1515">Click to read the article →</em>
                     `);}
                 else{
                     tooltip.style('display', 'block')
                     .html(`
                         <strong>${d.data.name}</strong><br/>
                         ${d.data.author ? `Author: ${d.data.author}<br/>` : ''}
-                        
                     `);
                 }
-                d3.select(this).attr('stroke', 'black');
+                d3.select(this).attr('stroke', '#222').attr('stroke-width', 1.5);
             })
             .on('mousemove', function (event) {
                 tooltip.style('left', (event.pageX + 10) + 'px')
@@ -252,7 +281,7 @@ const clippedGroup = svg.append('g')
             })
             .on('mouseout', function () {
                 tooltip.style('display', 'none');
-                d3.select(this).attr('stroke', '#fff');
+                d3.select(this).attr('stroke', 'rgba(255,255,255,0.85)').attr('stroke-width', 1);
             })
             .on('click', function (event, d) {
                 if (d.data.article_url) {
@@ -295,11 +324,15 @@ const clippedGroup = svg.append('g')
             });
 
         nodeEnter.append('text')
-            .attr('x', 5)
-            .attr('y', d => d.data._originalDepth === 0 ? 25 : 15)
-            .text(getNodeText)
+            .attr('x', 6)
+            .attr('y', d => d.data._originalDepth === 0 ? 26 : 16)
+            .text(d => {
+                const raw = getNodeText(d, currentRoot);
+                const fs = parseInt(getFontSize(d), 10);
+                return truncateLabel(raw, d.x1 - d.x0, fs);
+            })
             .attr('font-size', getFontSize)
-            .attr('fill', '#000')
+            .attr('fill', d => d.data._originalDepth === 0 ? '#fff' : '#1f1718')
             .style('pointer-events', 'none')
             .style('font-weight', getFontWeight);
 
@@ -315,9 +348,21 @@ const clippedGroup = svg.append('g')
             .attr('height', d => d.y1 - d.y0)
             .attr('fill', getColor);
 
-            nodeUpdate.select('text')
-        .text(d => getNodeText(d, currentRoot));
-        
+        nodeUpdate.select('text')
+            .attr('font-size', getFontSize)
+            .attr('fill', d => d.data._originalDepth === 0 ? '#fff' : '#1f1718')
+            .text(d => {
+                const raw = getNodeText(d, currentRoot);
+                const fs = parseInt(getFontSize(d), 10);
+                return truncateLabel(raw, d.x1 - d.x0, fs);
+            })
+            .style('display', d => {
+                const w = d.x1 - d.x0;
+                const h = d.y1 - d.y0;
+                // Hide cramped labels to reduce clutter and overlap.
+                return (w < 60 || h < 20) ? 'none' : 'block';
+            });
+
     }
 
     function findOriginalNodeByName(node, name) {

@@ -11,15 +11,20 @@ import globalState from './globalState.js';
 
     const sliderContainer = d3.select(container)
         .append('div')
-        .style('margin', '10px')
-        .style('text-align', 'center') 
-        .style('position', 'absolute'); // I want to position it inside the graph container
-        
-        
+        .attr('class', 'network-toolbar')
+        .style('display', 'flex')
+        .style('align-items', 'center')
+        .style('gap', '10px')
+        .style('flex-wrap', 'wrap')
+        .style('margin', '0 0 10px 0')
+        .style('position', 'relative');
 
     sliderContainer.append('label')
         .attr('for', 'zoom-slider')
-        .text('Zoom: ');
+        .style('font-size', '13px')
+        .style('color', '#6b5a58')
+        .style('font-weight', '600')
+        .text('Zoom');
 
     const zoomSlider = sliderContainer.append('input')
         .attr('id', 'zoom-slider')
@@ -30,12 +35,36 @@ import globalState from './globalState.js';
         .attr('value', initialScale)
         .style('width', '300px');
 
+    const searchInput = sliderContainer.append('input')
+        .attr('id', 'network-search')
+        .attr('type', 'text')
+        .attr('placeholder', 'Search article...');
+
+    const suggestionList = sliderContainer.append('div')
+        .attr('id', 'network-search-suggestions')
+        .style('position', 'absolute')
+        .style('background', '#fff')
+        .style('border', '1px solid #d7c0bc')
+        .style('border-radius', '8px')
+        .style('box-shadow', '0 10px 18px rgba(0,0,0,0.14)')
+        .style('max-height', '170px')
+        .style('overflow-y', 'auto')
+        .style('min-width', '180px')
+        .style('display', 'none')
+        .style('text-align', 'left')
+        .style('z-index', '20')
+        .style('font-size', '13px');
+
     const svg = d3.select(container)
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .style('border', '2px solid #ccc')
-        .style('background-color', '#f3ebea');
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .style('width', '100%')
+        .style('height', `${height}px`)
+        .style('border', '1px solid #ead9d4')
+        .style('border-radius', '10px')
+        .style('background-color', '#fbfaf8')
+        .style('display', 'block');
 
     const g = svg.append('g');
 
@@ -687,7 +716,99 @@ label = labelEnter.merge(label);
     // Finally, initialize the graph with everything
     updateGraph("All", "All");
 
+    //------------------------------------------------
+    // SEARCH (highlight + zoom to matching node)
+    //------------------------------------------------
+    function clearSearchHighlight() {
+        node.attr('opacity', 1).attr('stroke', null).attr('stroke-width', null);
+        link.attr('opacity', 0.6);
+    }
+
+    function focusOnNode(target) {
+        // Dim everything, highlight the matched node.
+        node.attr('opacity', n => n === target ? 1 : 0.15)
+            .attr('stroke', n => n === target ? '#222' : null)
+            .attr('stroke-width', n => n === target ? 2 : null);
+        link.attr('opacity', l => (l.source === target || l.target === target) ? 0.8 : 0.05);
+
+        // Pan/zoom to the node.
+        if (typeof target.x === 'number' && typeof target.y === 'number') {
+            const k = 1.0;
+            const transform = d3.zoomIdentity
+                .translate(width / 2, height / 2)
+                .scale(k)
+                .translate(-target.x, -target.y);
+            svg.transition().duration(600).call(zoom.transform, transform);
+        }
+    }
+
+    function renderSuggestions(query) {
+        suggestionList.selectAll('*').remove();
+        if (!query) {
+            suggestionList.style('display', 'none');
+            return;
+        }
+        const q = query.toLowerCase();
+        const matches = allNodes
+            .filter(n => n.name && n.name.toLowerCase().includes(q))
+            .slice(0, 8);
+        if (matches.length === 0) {
+            suggestionList.style('display', 'none');
+            return;
+        }
+        // Position the suggestion list below the search input.
+        const inputNode = searchInput.node();
+        suggestionList
+            .style('left', `${inputNode.offsetLeft}px`)
+            .style('top', `${inputNode.offsetTop + inputNode.offsetHeight + 4}px`)
+            .style('display', 'block');
+        matches.forEach(m => {
+            suggestionList.append('div')
+                .style('padding', '6px 10px')
+                .style('cursor', 'pointer')
+                .style('border-bottom', '1px solid #f0e3e0')
+                .text(m.name)
+                .on('mouseover', function () { d3.select(this).style('background', '#f7ece9'); })
+                .on('mouseout', function () { d3.select(this).style('background', '#fff'); })
+                .on('click', () => {
+                    searchInput.property('value', m.name);
+                    suggestionList.style('display', 'none');
+                    focusOnNode(m);
+                });
+        });
+    }
+
+    searchInput.on('input', function () {
+        const q = this.value.trim();
+        if (!q) {
+            clearSearchHighlight();
+            suggestionList.style('display', 'none');
+            return;
+        }
+        renderSuggestions(q);
+    });
+
+    searchInput.on('keydown', function (event) {
+        if (event.key === 'Enter') {
+            const q = this.value.trim().toLowerCase();
+            if (!q) return;
+            const match = allNodes.find(n => n.name && n.name.toLowerCase() === q)
+                || allNodes.find(n => n.name && n.name.toLowerCase().includes(q));
+            if (match) {
+                suggestionList.style('display', 'none');
+                focusOnNode(match);
+            }
+        } else if (event.key === 'Escape') {
+            this.value = '';
+            clearSearchHighlight();
+            suggestionList.style('display', 'none');
+        }
+    });
+
     globalState.subscribe((view) => {
+        // Reset any search highlight on view changes.
+        searchInput.property('value', '');
+        suggestionList.style('display', 'none');
 
         if (view.type === 'broad' && view.category) {
             selectedTopCategory= view.category;
