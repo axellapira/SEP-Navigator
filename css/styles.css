@@ -34,9 +34,9 @@ body.os {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background:
-    radial-gradient(circle at 18% 12%, rgba(255, 245, 235, 0.45), transparent 55%),
-    radial-gradient(circle at 85% 85%, rgba(140, 21, 21, 0.35), transparent 50%),
-    linear-gradient(160deg, #efd9d2 0%, #d9aaa1 35%, #a35d57 70%, #6e2624 100%);
+    radial-gradient(ellipse at 80% 92%, rgba(140, 21, 21, 0.16), transparent 55%),
+    radial-gradient(ellipse at 12% 8%, rgba(255, 250, 244, 0.55), transparent 45%),
+    linear-gradient(180deg, #f3ece6 0%, #e7d8d1 100%);
   background-attachment: fixed;
   overflow: hidden;
   height: 100vh;
@@ -189,19 +189,21 @@ main {
   z-index: 0;
 }
 .desktop-watermark img {
-  width: 280px;
-  height: 280px;
-  opacity: 0.08;
-  filter: grayscale(0.1) blur(0.4px);
-  border-radius: 30px;
+  width: 240px;
+  height: 240px;
+  opacity: 0.14;
+  filter: grayscale(0.2);
+  border-radius: 28px;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 .watermark-label {
   margin-top: 18px;
-  font-size: 13px;
-  letter-spacing: 6px;
+  font-size: 12px;
+  letter-spacing: 7px;
   text-transform: uppercase;
-  color: rgba(255, 235, 230, 0.55);
-  font-weight: 600;
+  color: rgba(80, 30, 30, 0.32);
+  font-weight: 700;
 }
 
 /* ==================================================================
@@ -230,13 +232,7 @@ main {
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
-.desk-icon:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-.desk-icon.is-selected {
-  background: rgba(255, 255, 255, 0.28);
-  border-color: rgba(255, 255, 255, 0.5);
-}
+/* hover/selected handled below with light-wallpaper colors */
 
 .icon-glyph {
   width: 56px; height: 56px;
@@ -250,14 +246,20 @@ main {
   margin-top: 4px;
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  color: #2a1818;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.55);
   text-align: center;
   line-height: 1.2;
   white-space: nowrap;
   max-width: 86px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.desk-icon:hover { background: rgba(255, 255, 255, 0.45); }
+.desk-icon.is-selected {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(140, 21, 21, 0.3);
 }
 
 /* ==================================================================
@@ -455,6 +457,20 @@ main {
 .resize-handle:hover { opacity: 1; }
 .window.is-maximized .resize-handle { display: none; }
 
+/* Invisible grab strips along edges + remaining corners */
+.resize-edge {
+  position: absolute;
+  z-index: 4;
+}
+.resize-n { top: 0; left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+.resize-s { bottom: 0; left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+.resize-e { right: 0; top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+.resize-w { left: 0; top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+.resize-nw { top: 0; left: 0; width: 10px; height: 10px; cursor: nwse-resize; }
+.resize-ne { top: 0; right: 0; width: 10px; height: 10px; cursor: nesw-resize; }
+.resize-sw { bottom: 0; left: 0; width: 10px; height: 10px; cursor: nesw-resize; }
+.window.is-maximized .resize-edge { display: none; }
+
 /* ==================================================================
    IN-WINDOW BUTTONS / FORM CONTROLS
    ================================================================== */
@@ -474,8 +490,62 @@ button {
 button:hover { filter: brightness(0.97); }
 button:active { filter: brightness(0.9); }
 
-/* Tame the controls inside the title bar */
+/* Tame the controls (generic) */
 #controls { display: flex; gap: 6px; }
+
+/* Nav controls live in the Stanford red header — global state controllers */
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* Hide nav when at the root of the taxonomy (nothing to go back to) */
+body.at-root .nav-controls {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-6px);
+}
+
+.nav-controls #controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 3px 4px;
+  backdrop-filter: blur(8px);
+}
+
+.nav-controls #controls button {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  padding: 5px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: none;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.nav-controls #controls button:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.nav-controls #controls button:active {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+/* Use a chevron glyph for Back to make it feel like a nav arrow */
+.nav-controls #controls #backButton::before {
+  content: '←';
+  margin-right: 6px;
+  font-weight: 700;
+}
 
 select {
   font-family: inherit;
@@ -747,6 +817,56 @@ select:focus {
   60%  { transform: translateY(0); }
   80%  { transform: translateY(-6px); }
   100% { transform: translateY(0); }
+}
+
+/* ==================================================================
+   INLINE SEP ARTICLE PREVIEW (iframe in the treemap card)
+   ================================================================== */
+#treemap-preview {
+  --preview-accent: #8c1515;
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 6;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  border: 3px solid var(--preview-accent);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+#treemap-preview.hidden { display: none; }
+
+.preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.78)),
+    var(--preview-accent);
+  border-bottom: 2px solid var(--preview-accent);
+}
+.preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--preview-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.preview-actions { display: flex; gap: 6px; }
+.preview-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.preview-iframe {
+  flex: 1;
+  border: 0;
+  background: #fff;
+  width: 100%;
 }
 
 /* ==================================================================

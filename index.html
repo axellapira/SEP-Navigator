@@ -11,7 +11,7 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
-<body class="os">
+<body class="os at-root">
 
     <!-- =========================== TOP MENU BAR =========================== -->
     <div id="menubar" class="menubar">
@@ -44,6 +44,9 @@
         <div id="title-left">
             <img src="SEP-LOGO.jpg" alt="SEP Logo" id="sep-logo">
             <h1>Stanford Encyclopedia of Philosophy Navigator</h1>
+        </div>
+        <div id="nav-controls" class="nav-controls">
+            <div id="controls"></div>
         </div>
         <div id="title-right">
             <button id="help-button" aria-label="Help">?</button>
@@ -174,12 +177,17 @@
                       <button class="tl tl-max" data-action="maximize" aria-label="Maximize"></button>
                   </div>
                   <h2>Articles Taxonomy</h2>
-                  <div class="card-controls">
-                      <div id="controls"></div>
-                  </div>
+                  <div class="card-controls"></div>
               </div>
               <div class="card-body" id="treeMapBody"></div>
               <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+              <div class="resize-edge resize-n" data-resize="n"></div>
+              <div class="resize-edge resize-s" data-resize="s"></div>
+              <div class="resize-edge resize-e" data-resize="e"></div>
+              <div class="resize-edge resize-w" data-resize="w"></div>
+              <div class="resize-edge resize-ne" data-resize="ne"></div>
+              <div class="resize-edge resize-nw" data-resize="nw"></div>
+              <div class="resize-edge resize-sw" data-resize="sw"></div>
           </section>
 
           <!-- Window: Large Network -->
@@ -204,6 +212,13 @@
               </div>
               <div class="card-body" id="largeNetworkBody"></div>
               <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+              <div class="resize-edge resize-n" data-resize="n"></div>
+              <div class="resize-edge resize-s" data-resize="s"></div>
+              <div class="resize-edge resize-e" data-resize="e"></div>
+              <div class="resize-edge resize-w" data-resize="w"></div>
+              <div class="resize-edge resize-ne" data-resize="ne"></div>
+              <div class="resize-edge resize-nw" data-resize="nw"></div>
+              <div class="resize-edge resize-sw" data-resize="sw"></div>
           </section>
 
           <!-- Content windows for desktop files (hidden by default) -->
@@ -227,6 +242,13 @@
               <p>Drag windows by their title bar. Resize from the bottom-right. Hit the green light to maximize. Hit yellow to send a window to the dock.</p>
             </div>
             <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+            <div class="resize-edge resize-n" data-resize="n"></div>
+            <div class="resize-edge resize-s" data-resize="s"></div>
+            <div class="resize-edge resize-e" data-resize="e"></div>
+            <div class="resize-edge resize-w" data-resize="w"></div>
+            <div class="resize-edge resize-ne" data-resize="ne"></div>
+            <div class="resize-edge resize-nw" data-resize="nw"></div>
+            <div class="resize-edge resize-sw" data-resize="sw"></div>
           </section>
 
           <section id="howToWindow" class="window window-text" data-window-title="How to use" data-window-icon="doc" data-state="closed" style="width: 460px; height: 360px;">
@@ -250,6 +272,13 @@
               <p>Anything minimized or closed lands in the dock at the bottom. Click to bring it back.</p>
             </div>
             <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+            <div class="resize-edge resize-n" data-resize="n"></div>
+            <div class="resize-edge resize-s" data-resize="s"></div>
+            <div class="resize-edge resize-e" data-resize="e"></div>
+            <div class="resize-edge resize-w" data-resize="w"></div>
+            <div class="resize-edge resize-ne" data-resize="ne"></div>
+            <div class="resize-edge resize-nw" data-resize="nw"></div>
+            <div class="resize-edge resize-sw" data-resize="sw"></div>
           </section>
 
           <section id="creditsWindow" class="window window-text" data-window-title="Credits" data-window-icon="folder" data-state="closed" style="width: 420px; height: 280px;">
@@ -272,6 +301,13 @@
               <p style="margin-top: 14px; color: var(--text-faint);">© 2026 SEP Navigator</p>
             </div>
             <div class="resize-handle" data-resize="se" aria-hidden="true"></div>
+            <div class="resize-edge resize-n" data-resize="n"></div>
+            <div class="resize-edge resize-s" data-resize="s"></div>
+            <div class="resize-edge resize-e" data-resize="e"></div>
+            <div class="resize-edge resize-w" data-resize="w"></div>
+            <div class="resize-edge resize-ne" data-resize="ne"></div>
+            <div class="resize-edge resize-nw" data-resize="nw"></div>
+            <div class="resize-edge resize-sw" data-resize="sw"></div>
           </section>
 
         </div>
@@ -573,24 +609,36 @@
           }
         });
 
-        // ----- Resize -----
+        // ----- Resize (corner + all 4 edges) -----
         let resize = null;
+        const cursorByDir = {
+          n: 'ns-resize', s: 'ns-resize',
+          e: 'ew-resize', w: 'ew-resize',
+          ne: 'nesw-resize', sw: 'nesw-resize',
+          nw: 'nwse-resize', se: 'nwse-resize'
+        };
         desktop.addEventListener('mousedown', function(e) {
-          const h = e.target.closest('.resize-handle');
+          const h = e.target.closest('.resize-handle, .resize-edge');
           if (!h) return;
           const win = h.closest('.window');
           if (win.dataset.state === 'maximized') return;
           const rect = win.getBoundingClientRect();
+          const deskRect = desktop.getBoundingClientRect();
+          const dir = h.dataset.resize || 'se';
           resize = {
             win,
+            dir,
             startX: e.clientX,
             startY: e.clientY,
             startW: rect.width,
-            startH: rect.height
+            startH: rect.height,
+            startLeft: parseFloat(win.style.left) || 0,
+            startTop: parseFloat(win.style.top) || 0,
+            deskRect
           };
           bringToFront(win);
           document.body.style.userSelect = 'none';
-          document.body.style.cursor = 'nwse-resize';
+          document.body.style.cursor = cursorByDir[dir] || 'nwse-resize';
           e.preventDefault();
           e.stopPropagation();
         });
@@ -603,10 +651,38 @@
             drag.win.style.top = Math.max(0, newTop) + 'px';
           }
           if (resize) {
-            const w = Math.max(260, e.clientX - resize.startX + resize.startW);
-            const h = Math.max(200, e.clientY - resize.startY + resize.startH);
-            resize.win.style.width = w + 'px';
-            resize.win.style.height = h + 'px';
+            const dx = e.clientX - resize.startX;
+            const dy = e.clientY - resize.startY;
+            const dir = resize.dir;
+            const minW = 260, minH = 200;
+            let newW = resize.startW;
+            let newH = resize.startH;
+            let newLeft = resize.startLeft;
+            let newTop = resize.startTop;
+            if (dir.includes('e')) {
+              newW = Math.max(minW, resize.startW + dx);
+            }
+            if (dir.includes('w')) {
+              const proposedW = resize.startW - dx;
+              if (proposedW >= minW) {
+                newW = proposedW;
+                newLeft = resize.startLeft + dx;
+              }
+            }
+            if (dir.includes('s')) {
+              newH = Math.max(minH, resize.startH + dy);
+            }
+            if (dir.includes('n')) {
+              const proposedH = resize.startH - dy;
+              if (proposedH >= minH) {
+                newH = proposedH;
+                newTop = resize.startTop + dy;
+              }
+            }
+            resize.win.style.width = newW + 'px';
+            resize.win.style.height = newH + 'px';
+            resize.win.style.left = newLeft + 'px';
+            resize.win.style.top = newTop + 'px';
           }
         });
 

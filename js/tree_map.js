@@ -10,22 +10,62 @@ import globalState from './globalState.js';
         .append('div')
         .attr('id', 'treemap-breadcrumb');
 
-    const svgW = width + margin.left + margin.right;
-    const svgH = height + margin.top + margin.bottom;
+    // Inline SEP article preview (iframe overlay)
+    const previewOverlay = d3.select(container)
+        .append('div')
+        .attr('id', 'treemap-preview')
+        .classed('hidden', true);
+
+    const previewBar = previewOverlay.append('div').attr('class', 'preview-bar');
+    const previewTitle = previewBar.append('div').attr('class', 'preview-title');
+    const previewActions = previewBar.append('div').attr('class', 'preview-actions');
+    previewActions.append('button')
+        .attr('class', 'preview-btn preview-open')
+        .attr('title', 'Open on plato.stanford.edu')
+        .html('Open ↗')
+        .on('click', () => {
+            const url = previewIframe.attr('src');
+            if (url) window.open(url, '_blank');
+        });
+    const previewIframe = previewOverlay.append('iframe')
+        .attr('class', 'preview-iframe')
+        .attr('referrerpolicy', 'no-referrer')
+        .attr('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
+
+    function showPreview(name, url, topCategory) {
+        previewTitle.text(name);
+        previewIframe.attr('src', url);
+        const color = topCategory ? colorScaleDepth1(topCategory) : '#8c1515';
+        previewOverlay.style('--preview-accent', color);
+        previewOverlay.classed('hidden', false);
+    }
+    function hidePreview() {
+        previewOverlay.classed('hidden', true);
+        previewIframe.attr('src', '');
+    }
+
+    // Dynamic dimensions — width/height follow the container body, clamped to limits
+    // so we don't over-tile when extreme aspect ratios occur.
+    const MIN_TREEMAP_W = 320, MAX_TREEMAP_W = 1600;
+    const MIN_TREEMAP_H = 380, MAX_TREEMAP_H = 1400;
+
+    let dynWidth = Math.max(MIN_TREEMAP_W, Math.min(MAX_TREEMAP_W, containerWidth - margin.left - margin.right));
+    let dynHeight = Math.max(MIN_TREEMAP_H, Math.min(MAX_TREEMAP_H, height));
+
     const svg = d3.select(container)
   .append('svg')
-  .attr('viewBox', `0 0 ${svgW} ${svgH}`)
+  .attr('viewBox', `0 0 ${dynWidth + margin.left + margin.right} ${dynHeight + margin.top + margin.bottom}`)
   .attr('preserveAspectRatio', 'xMidYMid meet')
   .style('width', '100%')
-  .style('height', `${svgH}px`)
+  .style('height', '100%')
   .style('display', 'block');
 
 svg.append("defs")
   .append("clipPath")
   .attr("id", "treemapClip")
   .append("rect")
-  .attr("width", width)
-  .attr("height", height);
+  .attr("width", dynWidth)
+  .attr("height", dynHeight);
 
 const clippedGroup = svg.append('g')
   .attr('clip-path', 'url(#treemapClip)')
@@ -52,7 +92,7 @@ const clippedGroup = svg.append('g')
     let path = [originalRoot];
 
     const treemap = d3.treemap()
-        .size([width, height])
+        .size([dynWidth, dynHeight])
         .paddingInner(d => d.depth === 0 ? 5 : 2)
         .paddingOuter(d => 5)
         .paddingTop(d => d.depth === 0 ? 40 : 20);
@@ -233,8 +273,12 @@ const clippedGroup = svg.append('g')
 
     function update(currentRoot) {
         treemap(currentRoot);
+        // Whenever the treemap re-renders, close any open inline preview
+        hidePreview();
         const breadcrumbParts = path.map(p => p.data.name);
         breadcrumb.text('Path: ' + breadcrumbParts.join(' > '));
+        // Toggle nav state: at root nothing to go back to.
+        document.body.classList.toggle('at-root', path.length <= 1);
         const nodes = clippedGroup.selectAll('g.node')
   .data(currentRoot.descendants(), d => d.data.name);
 
@@ -285,7 +329,21 @@ const clippedGroup = svg.append('g')
             })
             .on('click', function (event, d) {
                 if (d.data.article_url) {
-                    window.open(d.data.article_url, '_blank');
+                    showPreview(d.data.name, d.data.article_url, d.data._topCategory);
+                    // Also filter the network graph to this node + neighbors,
+                    // matching what happens when you click a node in the network.
+                    globalState.update({
+                        type: 'single',
+                        category: null,
+                        subcategory: null,
+                        node: {
+                            id: d.data.id || d.data.name,
+                            name: d.data.name,
+                            category: d.data.category || d.parent?.data.name || null,
+                            broaderCategory: d.data._topCategory || null,
+                            articleUrl: d.data.article_url
+                        }
+                    });
                 } else if (d.children) {
                     // Zoom into subtree
                     let targetNode = findOriginalNodeByName(originalRoot, d.data.name);
@@ -435,13 +493,13 @@ const clippedGroup = svg.append('g')
             treemap(initialRoot);
             update(initialRoot);
         } else if (view.type ==='single'&& view.node){
-            
+
             let targetNode = findOriginalNodeByName(originalRoot, view.node.name);
                     if (targetNode) {
-                        
+
                         if (!lastbuttonisBack){path.push(targetNode);}
                         console.log(path)
-                        
+
                         lastbuttonisBack = false;
 
                         if (path.length >1){
@@ -449,7 +507,7 @@ const clippedGroup = svg.append('g')
                             .sum(d => +d.word_count || 2000)
                             .sort((a, b) => b.value - a.value);
                         treemap(newRoot);
-                        
+
                         update(newRoot);}
                          else{
                             path.push(targetNode);
@@ -459,10 +517,16 @@ const clippedGroup = svg.append('g')
                             .sum(d => +d.word_count || 2000)
                             .sort((a, b) => b.value - a.value);
                         treemap(newRoot);
-                        
+
                         update(newRoot);
                         }
-                    
+
+                        // After re-render, if the target is an article, show inline SEP preview
+                        const url = targetNode.data.article_url || view.node.articleUrl;
+                        if (url) {
+                            const topCat = targetNode.data._topCategory || view.node.broaderCategory || view.node.category;
+                            showPreview(targetNode.data.name, url, topCat);
+                        }
                     }
         }
       });
@@ -475,6 +539,36 @@ const clippedGroup = svg.append('g')
         .sort((a, b) => b.value - a.value);
     treemap(initialRoot);
     update(initialRoot);
+
+    // ResizeObserver — re-tile when container size meaningfully changes.
+    const containerEl = document.querySelector(container);
+    if (containerEl && 'ResizeObserver' in window) {
+        let lastW = dynWidth, lastH = dynHeight;
+        let pending = null;
+        const ro = new ResizeObserver(entries => {
+            const e = entries[0];
+            if (!e) return;
+            const newW = Math.max(MIN_TREEMAP_W, Math.min(MAX_TREEMAP_W, e.contentRect.width));
+            const newH = Math.max(MIN_TREEMAP_H, Math.min(MAX_TREEMAP_H, e.contentRect.height));
+            // Only re-tile past a meaningful change (~6%)
+            const dW = Math.abs(newW - lastW) / lastW;
+            const dH = Math.abs(newH - lastH) / lastH;
+            if (dW < 0.06 && dH < 0.06) return;
+            clearTimeout(pending);
+            pending = setTimeout(() => {
+                dynWidth = newW; dynHeight = newH;
+                lastW = newW; lastH = newH;
+                svg.attr('viewBox', `0 0 ${dynWidth + margin.left + margin.right} ${dynHeight + margin.top + margin.bottom}`);
+                svg.select('defs clipPath rect').attr('width', dynWidth).attr('height', dynHeight);
+                treemap.size([dynWidth, dynHeight]);
+                const currentRoot = d3.hierarchy(path[path.length - 1].data)
+                    .sum(d => +d.word_count || 2000)
+                    .sort((a, b) => b.value - a.value);
+                update(currentRoot);
+            }, 120);
+        });
+        ro.observe(containerEl);
+    }
 }
 
 
