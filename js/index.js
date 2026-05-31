@@ -2,6 +2,8 @@
 import { drawTreeMap } from './tree_map.js';
 import { drawLargeNetwork } from './large_network.js';
 import globalState from './globalState.js';
+import userData from './userData.js';
+import { initReadingList } from './reading_list.js';
 
 
 // Initialise the visualisations
@@ -42,6 +44,9 @@ helpOverlay.addEventListener("click", (event) => {
         helpOverlay.classList.add("hidden");
     }
 });
+
+// Reading list panel (independent of viz init)
+initReadingList();
 
 // Initialise
 initializeVisualizations();

@@ -820,6 +820,146 @@ select:focus {
 }
 
 /* ==================================================================
+   READING LIST WINDOW
+   ================================================================== */
+.reading-list-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.reading-list-stats .rl-stat strong {
+  color: var(--stanford-red-dark);
+  font-weight: 700;
+  margin-right: 3px;
+}
+.reading-list-stats .rl-stat-sep { opacity: 0.5; }
+
+.reading-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #fbf6f3;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.rl-item:hover {
+  background: #fff;
+  border-color: #d4b7b1;
+}
+
+.rl-tag {
+  width: 4px;
+  height: 28px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.rl-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.rl-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rl-read-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #efe3df;
+  color: var(--stanford-red-dark);
+  margin-left: 6px;
+  vertical-align: 1px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.rl-cat {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.rl-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.rl-btn {
+  font-size: 11.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.rl-remove { color: var(--text-muted); }
+.rl-remove:hover { color: var(--stanford-red); background: rgba(140,21,21,0.07); }
+
+.reading-list-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.reading-list-empty p { margin: 0 0 6px; }
+
+/* Star button on the article preview */
+.preview-star {
+  width: 30px;
+  padding: 4px 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+.preview-star.is-saved {
+  color: #e0aa3e;
+  text-shadow: 0 0 6px rgba(224, 170, 62, 0.4);
+}
+
+/* Dock badge (notification count) */
+.dock-app { position: relative; }
+.dock-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 800;
+  background: var(--stanford-red);
+  color: #fff;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(140, 21, 21, 0.45);
+}
+
+/* ==================================================================
    INLINE SEP ARTICLE PREVIEW (iframe in the treemap card)
    ================================================================== */
 #treemap-preview {

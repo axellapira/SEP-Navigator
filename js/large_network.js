@@ -1,4 +1,5 @@
 import globalState from './globalState.js';
+import userData from './userData.js';
  export function drawLargeNetwork(data, container) {
     const containerWidth = document.querySelector(container).offsetWidth;
     const width = (containerWidth-25);
@@ -865,11 +866,34 @@ label = labelEnter.merge(label);
         else if (view.type === 'single' && view.node){
             updateGraphForNode(view.node)
         }
-
-
-
-
-
     });
+
+    // --- User-state visual cues: ring nodes that are read / saved ---
+    function applyUserStateToNodes() {
+        nodeGroup.selectAll('circle')
+            .attr('stroke', d => {
+                if (userData.isSaved(d.id)) return '#e0aa3e';
+                if (userData.isRead(d.id))  return 'rgba(255,255,255,0.95)';
+                return null;
+            })
+            .attr('stroke-width', d => {
+                if (userData.isSaved(d.id)) return 2;
+                if (userData.isRead(d.id))  return 1.5;
+                return null;
+            });
+    }
+    userData.subscribe(applyUserStateToNodes);
+    const _origUpdateGraph = updateGraph;
+    updateGraph = function(t, s) {
+        _origUpdateGraph(t, s);
+        setTimeout(applyUserStateToNodes, 0);
+    };
+    const _origUpdateGraphForNode = updateGraphForNode;
+    updateGraphForNode = function(n) {
+        _origUpdateGraphForNode(n);
+        setTimeout(applyUserStateToNodes, 0);
+    };
+    // Apply once after initial render.
+    setTimeout(applyUserStateToNodes, 50);
 }
 
