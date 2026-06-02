@@ -77,9 +77,12 @@ function zoomed(event) {
     g.attr('transform', event.transform);
     zoomSlider.property('value', event.transform.k);
 
-    // Update the font size of labels dynamically
-    g.selectAll('text')
-        .style('font-size', `${baseFontSize * 1/event.transform.k}px`);
+    // Inverse-scale labels (so they stay readable as the user zooms).
+    // Only clamp at the extremes to avoid runaway sizes at very low zoom.
+    const k = event.transform.k;
+    const fs = Math.min(60, Math.max(6, baseFontSize / k));
+    g.selectAll('text:not(.sr-target-label)')
+        .style('font-size', `${fs}px`);
     }
 
 
@@ -868,32 +871,16 @@ label = labelEnter.merge(label);
         }
     });
 
-    // --- User-state visual cues: ring nodes that are read / saved ---
+    // --- User-state visual cues: ring saved nodes only ---
     function applyUserStateToNodes() {
         nodeGroup.selectAll('circle')
-            .attr('stroke', d => {
-                if (userData.isSaved(d.id)) return '#e0aa3e';
-                if (userData.isRead(d.id))  return 'rgba(255,255,255,0.95)';
-                return null;
-            })
-            .attr('stroke-width', d => {
-                if (userData.isSaved(d.id)) return 2;
-                if (userData.isRead(d.id))  return 1.5;
-                return null;
-            });
+            .attr('stroke', d => userData.isSaved(d.id) ? '#e0aa3e' : null)
+            .attr('stroke-width', d => userData.isSaved(d.id) ? 2 : null);
     }
     userData.subscribe(applyUserStateToNodes);
-    const _origUpdateGraph = updateGraph;
-    updateGraph = function(t, s) {
-        _origUpdateGraph(t, s);
-        setTimeout(applyUserStateToNodes, 0);
-    };
-    const _origUpdateGraphForNode = updateGraphForNode;
-    updateGraphForNode = function(n) {
-        _origUpdateGraphForNode(n);
-        setTimeout(applyUserStateToNodes, 0);
-    };
-    // Apply once after initial render.
-    setTimeout(applyUserStateToNodes, 50);
+    // Re-apply on every view change (after the graph re-renders).
+    globalState.subscribe(() => setTimeout(applyUserStateToNodes, 30));
+    // Initial paint.
+    setTimeout(applyUserStateToNodes, 80);
 }
 

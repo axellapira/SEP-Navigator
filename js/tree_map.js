@@ -61,7 +61,7 @@ import userData from './userData.js';
         previewOverlay.classed('hidden', false);
         currentPreviewId = id || name;
         currentPreviewMeta = { name, url, topCategory: topCategory || null };
-        userData.markRead(currentPreviewId);
+        userData.markVisited(currentPreviewId, currentPreviewMeta);
         updateStarButton();
     }
     function hidePreview() {
@@ -349,8 +349,10 @@ const clippedGroup = svg.append('g')
                 d3.select(this).attr('stroke', '#222').attr('stroke-width', 1.5);
             })
             .on('mousemove', function (event) {
-                tooltip.style('left', (event.pageX + 10) + 'px')
-                    .style('top', (event.pageY + 10) + 'px');
+                const containerEl = document.querySelector(container);
+                const rect = containerEl.getBoundingClientRect();
+                tooltip.style('left', (event.clientX - rect.left + 12) + 'px')
+                    .style('top',  (event.clientY - rect.top  + 12) + 'px');
             })
             .on('mouseout', function () {
                 tooltip.style('display', 'none');
@@ -479,25 +481,25 @@ const clippedGroup = svg.append('g')
 
     }
 
-    // Refresh indicators when userData changes.
+    // Refresh indicators when userData changes (guarded with a ready flag).
+    let treemapReady = false;
     userData.subscribe(() => {
-        if (typeof initialRoot !== 'undefined') {
-            // Re-run the update for current root to refresh indicators only.
-            const currentRoot = d3.hierarchy(path[path.length - 1].data)
-                .sum(d => +d.word_count || 2000)
-                .sort((a, b) => b.value - a.value);
-            treemap(currentRoot);
-            // Just re-style the existing indicators without full rebuild
-            clippedGroup.selectAll('g.node').select('circle.user-indicator')
-                .attr('fill', d => userData.isSaved(d.data.id || d.data.name) ? '#e0aa3e'
-                                  : userData.isRead(d.data.id || d.data.name) ? 'rgba(255,255,255,0.95)'
-                                  : 'transparent')
-                .style('display', d => {
-                    if (d.data._originalDepth !== 3) return 'none';
-                    const id = d.data.id || d.data.name;
-                    return (userData.isRead(id) || userData.isSaved(id)) ? 'block' : 'none';
-                });
-        }
+        if (!treemapReady) return;
+        clippedGroup.selectAll('g.node').select('circle.user-indicator')
+            .attr('fill', d => userData.isSaved(d.data.id || d.data.name) ? '#e0aa3e'
+                              : userData.isRead(d.data.id || d.data.name) ? 'rgba(255,255,255,0.95)'
+                              : 'transparent')
+            .attr('stroke', d => userData.isSaved(d.data.id || d.data.name) ? '#a47620'
+                                : userData.isRead(d.data.id || d.data.name) ? 'rgba(0,0,0,0.25)'
+                                : 'transparent')
+            .style('display', d => {
+                if (d.data._originalDepth !== 3) return 'none';
+                const w = d.x1 - d.x0;
+                const h = d.y1 - d.y0;
+                if (w < 30 || h < 20) return 'none';
+                const id = d.data.id || d.data.name;
+                return (userData.isRead(id) || userData.isSaved(id)) ? 'block' : 'none';
+            });
     });
 
     function findOriginalNodeByName(node, name) {
@@ -617,6 +619,7 @@ const clippedGroup = svg.append('g')
         .sort((a, b) => b.value - a.value);
     treemap(initialRoot);
     update(initialRoot);
+    treemapReady = true;
 
     // ResizeObserver — re-tile when container size meaningfully changes.
     const containerEl = document.querySelector(container);

@@ -42,21 +42,46 @@ function saveMeta() {
 }
 
 const userData = {
-  // Reading state
-  isRead(id)  { return state.read.has(id); },
-  markRead(id) {
-    if (!id || state.read.has(id)) return;
+  // Visited state (was "read")
+  isVisited(id) { return state.read.has(id); },
+  isRead(id)    { return state.read.has(id); }, // alias for back-compat
+  markVisited(id, meta) {
+    if (!id) return;
+    const wasVisited = state.read.has(id);
     state.read.add(id);
-    saveSet(READ_KEY, state.read);
-    emit();
+    if (meta) {
+      savedMeta[id] = { ...savedMeta[id], ...meta };
+      saveMeta();
+    }
+    if (!wasVisited) {
+      saveSet(READ_KEY, state.read);
+      emit();
+    } else if (meta) {
+      emit();
+    }
   },
-  unmarkRead(id) {
+  markRead(id, meta) { return this.markVisited(id, meta); }, // alias
+  unmarkVisited(id) {
     if (!id || !state.read.has(id)) return;
     state.read.delete(id);
     saveSet(READ_KEY, state.read);
     emit();
   },
+  unmarkRead(id) { return this.unmarkVisited(id); },
+  allVisited() { return state.read; },
   allRead() { return state.read; },
+  clearAllVisited() {
+    if (state.read.size === 0) return;
+    state.read.clear();
+    saveSet(READ_KEY, state.read);
+    emit();
+  },
+  allVisitedWithMeta() {
+    return Array.from(state.read).map(id => ({
+      id,
+      ...(savedMeta[id] || { name: id })
+    }));
+  },
 
   // Saved/favorites state. meta is optional: {name, url, category, broaderCategory}
   isSaved(id) { return state.saved.has(id); },

@@ -1,5 +1,5 @@
-// Reading List panel: renders saved articles into the Reading List window,
-// updates the dock badge, supports open + remove actions.
+// Reading List window: shows Saved and Visited articles via two tabs.
+// Updates the dock badge (count of saved). Open + remove actions.
 
 import userData from './userData.js';
 import globalState from './globalState.js';
@@ -9,59 +9,94 @@ export function initReadingList() {
   const emptyEl = document.getElementById('readingListEmpty');
   const statsEl = document.getElementById('readingListStats');
   const badgeEl = document.getElementById('readingListBadge');
+  const tabsEl  = document.querySelectorAll('.rl-tab');
+  const clearAllBtn = document.getElementById('rlClearAll');
 
   if (!itemsEl) return;
 
+  let activeTab = 'saved';
+
+  tabsEl.forEach(t => {
+    t.addEventListener('click', () => {
+      activeTab = t.dataset.tab;
+      tabsEl.forEach(x => x.classList.toggle('is-active', x === t));
+      render();
+    });
+  });
+
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+      if (activeTab === 'visited') {
+        const n = userData.allVisited().size;
+        if (n === 0) return;
+        if (confirm(`Clear all ${n} visited articles? This can't be undone.`)) {
+          userData.clearAllVisited();
+        }
+      }
+    });
+  }
+
   function render() {
-    const items = userData.allSavedWithMeta();
-    const readCount = userData.allRead().size;
+    const savedItems = userData.allSavedWithMeta();
+    const visitedItems = userData.allVisitedWithMeta();
+    const items = activeTab === 'visited' ? visitedItems : savedItems;
 
-    // Stats line
-    if (statsEl) {
-      const savedN = items.length;
-      statsEl.innerHTML = `
-        <span class="rl-stat"><strong>${savedN}</strong> saved</span>
-        <span class="rl-stat-sep">·</span>
-        <span class="rl-stat"><strong>${readCount}</strong> read</span>
-      `;
-    }
-
-    // Dock badge
+    // Dock badge: always saved count.
     if (badgeEl) {
-      if (items.length > 0) {
+      if (savedItems.length > 0) {
         badgeEl.style.display = 'inline-flex';
-        badgeEl.textContent = items.length > 99 ? '99+' : String(items.length);
+        badgeEl.textContent = savedItems.length > 99 ? '99+' : String(savedItems.length);
       } else {
         badgeEl.style.display = 'none';
       }
     }
 
-    // Items vs empty state
+    // Stats line
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <span class="rl-stat"><strong>${savedItems.length}</strong> saved</span>
+        <span class="rl-stat-sep">·</span>
+        <span class="rl-stat"><strong>${visitedItems.length}</strong> visited</span>
+      `;
+    }
+
+    // Show Clear all only on the Visited tab when there's something to clear
+    if (clearAllBtn) {
+      clearAllBtn.style.display = (activeTab === 'visited' && visitedItems.length > 0) ? 'inline-flex' : 'none';
+    }
+
+    // Empty state
     if (items.length === 0) {
       itemsEl.innerHTML = '';
-      if (emptyEl) emptyEl.style.display = 'block';
+      if (emptyEl) {
+        emptyEl.style.display = 'block';
+        emptyEl.innerHTML = activeTab === 'visited'
+          ? '<p>Nothing visited yet.</p><p>Click any article to start exploring.</p>'
+          : '<p>Your reading list is empty.</p><p>Star any article from its preview to save it here.</p>';
+      }
       return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
 
-    // Sort by name for stability
+    // Sort by name (stable order)
     items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     itemsEl.innerHTML = '';
     items.forEach(item => {
       const row = document.createElement('div');
       row.className = 'rl-item';
-      const isRead = userData.isRead(item.id);
+      const isSaved = userData.isSaved(item.id);
       const color = item.topCategory ? colorForCategory(item.topCategory) : '#8c1515';
+      const removeLabel = activeTab === 'saved' ? 'Remove from list' : 'Forget this visit';
       row.innerHTML = `
         <span class="rl-tag" style="background:${color}"></span>
         <div class="rl-text">
-          <div class="rl-name">${escapeHtml(item.name || item.id)}${isRead ? ' <span class="rl-read-pill">read</span>' : ''}</div>
+          <div class="rl-name">${escapeHtml(item.name || item.id)}${activeTab === 'visited' && isSaved ? ' <span class="rl-saved-pill">★</span>' : ''}</div>
           ${item.topCategory ? `<div class="rl-cat">${escapeHtml(item.topCategory)}</div>` : ''}
         </div>
         <div class="rl-actions">
           <button class="rl-btn rl-open" title="Open">Open</button>
-          <button class="rl-btn rl-remove" title="Remove from list">✕</button>
+          <button class="rl-btn rl-remove" title="${removeLabel}">✕</button>
         </div>
       `;
       row.querySelector('.rl-open').addEventListener('click', () => {
@@ -79,26 +114,27 @@ export function initReadingList() {
         });
       });
       row.querySelector('.rl-remove').addEventListener('click', () => {
-        userData.unsaveItem(item.id);
+        if (activeTab === 'saved') userData.unsaveItem(item.id);
+        else userData.unmarkVisited(item.id);
       });
       itemsEl.appendChild(row);
     });
   }
 
-  // Re-render on every change.
   userData.subscribe(render);
 }
 
-// Same color set the rest of the app uses for top categories.
 function colorForCategory(name) {
+  const key = (name || '').trim();
   const map = {
-    'History of Philosophy': '#db4848',
-    'Moral Philosophy':      '#E69300',
-    'Metaphysics':           '#65C977',
+    'History of Philosophy':   '#db4848',
+    'Moral Philosophy':        '#E69300',
+    'Metaphysics':             '#65C977',
     'Philosophy of Knowledge': '#B874D9',
-    'Logic':                 '#5CAFFD'
+    'Philosophy of Logic':     '#5CAFFD',
+    'Logic':                   '#5CAFFD'
   };
-  return map[name] || '#8c1515';
+  return map[key] || '#8c1515';
 }
 
 function escapeHtml(s) {
