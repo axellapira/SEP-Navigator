@@ -46,7 +46,6 @@ function render(body) {
     body.appendChild(furthestPairCard());
     body.appendChild(mostCentralCard());
     body.appendChild(lonelyCard());
-    body.appendChild(isolatedClustersCard());
     body.appendChild(bridgesCard());
   }, 20));
 }
