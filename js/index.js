@@ -2,6 +2,11 @@
 import { drawTreeMap } from './tree_map.js';
 import { drawLargeNetwork } from './large_network.js';
 import globalState from './globalState.js';
+import userData from './userData.js';
+import { initReadingList } from './reading_list.js';
+import { initRandomArticle } from './random_article.js';
+import { initSpeedrun, enterSetup as enterSpeedrunSetup } from './speedrun.js';
+import { initCuriosities } from './curiosities.js';
 
 
 // Initialise the visualisations
@@ -13,6 +18,15 @@ function initializeVisualizations() {
 
       // network
       drawLargeNetwork(data, '#largeNetworkBody');
+
+      // Random article button (now that data is loaded)
+      initRandomArticle(data);
+      initSpeedrun(data);
+      initCuriosities(data);
+
+      // Dock app for speedrun → enter setup
+      const srDock = document.getElementById('dockSpeedrun');
+      if (srDock) srDock.addEventListener('click', () => enterSpeedrunSetup());
 
       globalState.update({
         type: 'broad',
@@ -30,9 +44,11 @@ function initializeVisualizations() {
 const helpButton = document.getElementById("help-button");
 const helpOverlay = document.getElementById("help-overlay");
 
-helpButton.addEventListener("click", () => {
-    helpOverlay.classList.toggle("hidden");
-});
+if (helpButton) {
+    helpButton.addEventListener("click", () => {
+        helpOverlay.classList.toggle("hidden");
+    });
+}
 
 // Close overlay when clicking outside the help boxes
 helpOverlay.addEventListener("click", (event) => {
@@ -42,6 +58,9 @@ helpOverlay.addEventListener("click", (event) => {
         helpOverlay.classList.add("hidden");
     }
 });
+
+// Reading list panel (independent of viz init)
+initReadingList();
 
 // Initialise
 initializeVisualizations();

@@ -1,4 +1,5 @@
 import globalState from './globalState.js';
+import userData from './userData.js';
  
  export function drawTreeMap(data, container) {
     const margin = { top: 0, right: 30, bottom: 0, left: 0 };
@@ -19,30 +20,58 @@ import globalState from './globalState.js';
     const previewBar = previewOverlay.append('div').attr('class', 'preview-bar');
     const previewTitle = previewBar.append('div').attr('class', 'preview-title');
     const previewActions = previewBar.append('div').attr('class', 'preview-actions');
+    const starBtn = previewActions.append('button')
+        .attr('class', 'preview-btn preview-star')
+        .attr('title', 'Save to Reading List');
+    starBtn.on('click', () => {
+        if (!currentPreviewId) return;
+        userData.toggleSave(currentPreviewId, currentPreviewMeta || {});
+        updateStarButton();
+    });
     previewActions.append('button')
         .attr('class', 'preview-btn preview-open')
         .attr('title', 'Open on plato.stanford.edu')
         .html('Open ↗')
         .on('click', () => {
             const url = previewIframe.attr('src');
-            if (url) window.open(url, '_blank');
+            if (url) {
+                if (currentPreviewId) userData.markRead(currentPreviewId);
+                window.open(url, '_blank');
+            }
         });
     const previewIframe = previewOverlay.append('iframe')
         .attr('class', 'preview-iframe')
         .attr('referrerpolicy', 'no-referrer')
         .attr('sandbox', 'allow-same-origin allow-scripts allow-popups allow-forms');
 
-    function showPreview(name, url, topCategory) {
+    let currentPreviewId = null;
+    let currentPreviewMeta = null;
+    function updateStarButton() {
+        const isSaved = currentPreviewId && userData.isSaved(currentPreviewId);
+        starBtn.html(isSaved ? '★' : '☆');
+        starBtn.classed('is-saved', !!isSaved);
+        starBtn.attr('title', isSaved ? 'Remove from Reading List' : 'Save to Reading List');
+    }
+
+    function showPreview(name, url, topCategory, id) {
         previewTitle.text(name);
         previewIframe.attr('src', url);
         const color = topCategory ? colorScaleDepth1(topCategory) : '#8c1515';
         previewOverlay.style('--preview-accent', color);
         previewOverlay.classed('hidden', false);
+        currentPreviewId = id || name;
+        currentPreviewMeta = { name, url, topCategory: topCategory || null };
+        userData.markVisited(currentPreviewId, currentPreviewMeta);
+        updateStarButton();
     }
     function hidePreview() {
         previewOverlay.classed('hidden', true);
         previewIframe.attr('src', '');
+        currentPreviewId = null;
+        currentPreviewMeta = null;
     }
+    // Refresh star icon when storage changes from elsewhere
+    userData.subscribe(() => updateStarButton());
 
     // Dynamic dimensions — width/height follow the container body, clamped to limits
     // so we don't over-tile when extreme aspect ratios occur.
@@ -320,8 +349,10 @@ const clippedGroup = svg.append('g')
                 d3.select(this).attr('stroke', '#222').attr('stroke-width', 1.5);
             })
             .on('mousemove', function (event) {
-                tooltip.style('left', (event.pageX + 10) + 'px')
-                    .style('top', (event.pageY + 10) + 'px');
+                const containerEl = document.querySelector(container);
+                const rect = containerEl.getBoundingClientRect();
+                tooltip.style('left', (event.clientX - rect.left + 12) + 'px')
+                    .style('top',  (event.clientY - rect.top  + 12) + 'px');
             })
             .on('mouseout', function () {
                 tooltip.style('display', 'none');
@@ -329,7 +360,8 @@ const clippedGroup = svg.append('g')
             })
             .on('click', function (event, d) {
                 if (d.data.article_url) {
-                    showPreview(d.data.name, d.data.article_url, d.data._topCategory);
+                    const id = d.data.id || d.data.name;
+                    showPreview(d.data.name, d.data.article_url, d.data._topCategory, id);
                     // Also filter the network graph to this node + neighbors,
                     // matching what happens when you click a node in the network.
                     globalState.update({
@@ -394,6 +426,12 @@ const clippedGroup = svg.append('g')
             .style('pointer-events', 'none')
             .style('font-weight', getFontWeight);
 
+        // Read/saved indicator (small corner dot) — only on article leaves
+        nodeEnter.append('circle')
+            .attr('class', 'user-indicator')
+            .attr('r', 4)
+            .style('pointer-events', 'none');
+
         // UPDATE
         const nodeUpdate = nodeEnter.merge(nodes);
 
@@ -421,7 +459,48 @@ const clippedGroup = svg.append('g')
                 return (w < 60 || h < 20) ? 'none' : 'block';
             });
 
+        // Position + color the user-state indicator (article leaves only)
+        nodeUpdate.select('circle.user-indicator')
+            .attr('cx', d => (d.x1 - d.x0) - 8)
+            .attr('cy', 8)
+            .attr('fill', d => userData.isSaved(d.data.id || d.data.name) ? '#e0aa3e'
+                              : userData.isRead(d.data.id || d.data.name) ? 'rgba(255,255,255,0.95)'
+                              : 'transparent')
+            .attr('stroke', d => userData.isSaved(d.data.id || d.data.name) ? '#a47620'
+                                : userData.isRead(d.data.id || d.data.name) ? 'rgba(0,0,0,0.25)'
+                                : 'transparent')
+            .attr('stroke-width', 1)
+            .style('display', d => {
+                if (d.data._originalDepth !== 3) return 'none';
+                const w = d.x1 - d.x0;
+                const h = d.y1 - d.y0;
+                if (w < 30 || h < 20) return 'none';
+                const id = d.data.id || d.data.name;
+                return (userData.isRead(id) || userData.isSaved(id)) ? 'block' : 'none';
+            });
+
     }
+
+    // Refresh indicators when userData changes (guarded with a ready flag).
+    let treemapReady = false;
+    userData.subscribe(() => {
+        if (!treemapReady) return;
+        clippedGroup.selectAll('g.node').select('circle.user-indicator')
+            .attr('fill', d => userData.isSaved(d.data.id || d.data.name) ? '#e0aa3e'
+                              : userData.isRead(d.data.id || d.data.name) ? 'rgba(255,255,255,0.95)'
+                              : 'transparent')
+            .attr('stroke', d => userData.isSaved(d.data.id || d.data.name) ? '#a47620'
+                                : userData.isRead(d.data.id || d.data.name) ? 'rgba(0,0,0,0.25)'
+                                : 'transparent')
+            .style('display', d => {
+                if (d.data._originalDepth !== 3) return 'none';
+                const w = d.x1 - d.x0;
+                const h = d.y1 - d.y0;
+                if (w < 30 || h < 20) return 'none';
+                const id = d.data.id || d.data.name;
+                return (userData.isRead(id) || userData.isSaved(id)) ? 'block' : 'none';
+            });
+    });
 
     function findOriginalNodeByName(node, name) {
         if (node.data.name === name) return node;
@@ -525,7 +604,8 @@ const clippedGroup = svg.append('g')
                         const url = targetNode.data.article_url || view.node.articleUrl;
                         if (url) {
                             const topCat = targetNode.data._topCategory || view.node.broaderCategory || view.node.category;
-                            showPreview(targetNode.data.name, url, topCat);
+                            const id = view.node.id || targetNode.data.id || targetNode.data.name;
+                            showPreview(targetNode.data.name, url, topCat, id);
                         }
                     }
         }
@@ -539,6 +619,7 @@ const clippedGroup = svg.append('g')
         .sort((a, b) => b.value - a.value);
     treemap(initialRoot);
     update(initialRoot);
+    treemapReady = true;
 
     // ResizeObserver — re-tile when container size meaningfully changes.
     const containerEl = document.querySelector(container);

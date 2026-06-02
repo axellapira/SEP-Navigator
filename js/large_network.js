@@ -1,4 +1,5 @@
 import globalState from './globalState.js';
+import userData from './userData.js';
  export function drawLargeNetwork(data, container) {
     const containerWidth = document.querySelector(container).offsetWidth;
     const width = (containerWidth-25);
@@ -76,9 +77,12 @@ function zoomed(event) {
     g.attr('transform', event.transform);
     zoomSlider.property('value', event.transform.k);
 
-    // Update the font size of labels dynamically
-    g.selectAll('text')
-        .style('font-size', `${baseFontSize * 1/event.transform.k}px`);
+    // Inverse-scale labels (so they stay readable as the user zooms).
+    // Only clamp at the extremes to avoid runaway sizes at very low zoom.
+    const k = event.transform.k;
+    const fs = Math.min(60, Math.max(6, baseFontSize / k));
+    g.selectAll('text:not(.sr-target-label)')
+        .style('font-size', `${fs}px`);
     }
 
 
@@ -865,11 +869,18 @@ label = labelEnter.merge(label);
         else if (view.type === 'single' && view.node){
             updateGraphForNode(view.node)
         }
-
-
-
-
-
     });
+
+    // --- User-state visual cues: ring saved nodes only ---
+    function applyUserStateToNodes() {
+        nodeGroup.selectAll('circle')
+            .attr('stroke', d => userData.isSaved(d.id) ? '#e0aa3e' : null)
+            .attr('stroke-width', d => userData.isSaved(d.id) ? 2 : null);
+    }
+    userData.subscribe(applyUserStateToNodes);
+    // Re-apply on every view change (after the graph re-renders).
+    globalState.subscribe(() => setTimeout(applyUserStateToNodes, 30));
+    // Initial paint.
+    setTimeout(applyUserStateToNodes, 80);
 }
 
