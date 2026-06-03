@@ -1,53 +1,103 @@
 // Curiosities — graph trivia / fun facts about the SEP citation graph.
-// Renders cards into #curiositiesBody. Items are clickable, route through globalState.
+// Cards: furthest pair(s), most central, lonely, bridges.
+// A top filter strip restricts all cards to the selected categories.
 
 import { buildGraph } from './article_graph.js';
 import globalState from './globalState.js';
-import userData from './userData.js';
 
 let graph = null;
+let allowedCats = new Set();      // empty = all
+let lastBody = null;
 
 export function initCuriosities(data) {
   graph = buildGraph(data);
   const body = document.getElementById('curiositiesBody');
   if (!body) return;
-  // Compute on first open (lazy) so initial load isn't blocked.
+  lastBody = body;
   const opener = document.getElementById('dockCuriosities');
   if (opener) {
     opener.addEventListener('click', () => {
-      // Open the window via the window manager pattern (set data-state, show)
       const win = document.getElementById('curiositiesWindow');
       if (!win) return;
       win.classList.remove('is-closed', 'is-minimized');
       win.dataset.state = 'normal';
       win.style.display = '';
-      // Bring to front
       const allZ = Array.from(document.querySelectorAll('.window'))
         .map(w => parseInt(w.style.zIndex) || 10);
       win.style.zIndex = Math.max(...allZ) + 1;
-      // Lazy render once.
       if (!win.dataset.rendered) {
         render(body);
         win.dataset.rendered = '1';
       }
     });
   }
-  // Refresh button on the card header
   document.getElementById('curiositiesRefresh')?.addEventListener('click', () => {
+    graph.clearDiameterCache();
     render(body);
   });
 }
 
+function allowedSet() {
+  if (allowedCats.size === 0) return null;
+  const ids = new Set();
+  graph.articles.forEach(a => {
+    const c = (a.broaderCategory || a.category || '').trim();
+    if (allowedCats.has(c)) ids.add(a.id);
+  });
+  return ids.size === graph.articles.length ? null : ids;
+}
+
 function render(body) {
-  body.innerHTML = '<div class="cur-loading">Computing the curious corners of SEP…</div>';
-  // Defer heavy work to next frame so the loader paints.
+  body.innerHTML = '';
+  body.appendChild(renderFilterStrip());
+  const facts = document.createElement('div');
+  facts.id = 'curiositiesFacts';
+  body.appendChild(facts);
+  computeAndRender(facts);
+}
+
+function recompute() {
+  if (!lastBody) return;
+  const facts = document.getElementById('curiositiesFacts');
+  if (facts) computeAndRender(facts);
+}
+
+function computeAndRender(facts) {
+  facts.innerHTML = '<div class="cur-loading">Computing…</div>';
   requestAnimationFrame(() => setTimeout(() => {
-    body.innerHTML = '';
-    body.appendChild(furthestPairCard());
-    body.appendChild(mostCentralCard());
-    body.appendChild(lonelyCard());
-    body.appendChild(bridgesCard());
+    facts.innerHTML = '';
+    facts.appendChild(furthestPairCard());
+    facts.appendChild(mostCentralCard());
+    facts.appendChild(lonelyCard());
+    facts.appendChild(bridgesCard());
   }, 20));
+}
+
+function renderFilterStrip() {
+  const wrap = document.createElement('div');
+  wrap.className = 'cur-filter-strip';
+  const cats = graph.allTopCategories();
+  if (allowedCats.size === 0) cats.forEach(c => allowedCats.add(c));
+  const label = document.createElement('div');
+  label.className = 'cur-filter-label';
+  label.textContent = 'Limit to';
+  wrap.appendChild(label);
+  cats.forEach(c => {
+    const chip = document.createElement('label');
+    chip.className = 'sr-cat-chip';
+    chip.innerHTML = `
+      <input type="checkbox" ${allowedCats.has(c) ? 'checked' : ''}/>
+      <span class="sr-cat-swatch" style="background:${colorForCategory(c)}"></span>
+      <span>${escapeHtml(c)}</span>`;
+    chip.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) allowedCats.add(c);
+      else allowedCats.delete(c);
+      if (allowedCats.size === 0) { e.target.checked = true; allowedCats.add(c); return; }
+      recompute();
+    });
+    wrap.appendChild(chip);
+  });
+  return wrap;
 }
 
 function card(title, subtitle, contentEl) {
@@ -89,94 +139,90 @@ function articleRow(a, extra) {
 // ----- Cards -----
 
 function furthestPairCard() {
-  const d = graph.diameter();
+  const aset = allowedSet();
+  const result = graph.diameter(aset);
   const content = document.createElement('div');
-  if (!d || !d.path) {
-    content.innerHTML = '<div class="cur-empty">No path data.</div>';
+  if (!result || !result.pairs.length) {
+    content.innerHTML = '<div class="cur-empty">No paths found in this subgraph.</div>';
   } else {
-    const a = graph.getArticle(d.a);
-    const b = graph.getArticle(d.b);
+    const PREVIEW = 2;
+    const total = result.pairs.length;
     content.innerHTML = `
-      <p class="cur-fact"><strong>${d.len}</strong> clicks separate ${escapeHtml(a?.name || d.a)} from ${escapeHtml(b?.name || d.b)}.</p>
+      <p class="cur-fact"><strong>${result.len}</strong> click${result.len === 1 ? '' : 's'} separate the furthest pairs.
+      ${total > 1 ? `<span class="cur-fact-note">${total} pair${total === 1 ? '' : 's'} share this distance.</span>` : ''}
+      </p>
     `;
-    const pathWrap = document.createElement('div');
-    pathWrap.className = 'cur-pathlist';
-    d.path.forEach(id => {
-      const x = graph.getArticle(id);
-      if (x) pathWrap.appendChild(articleRow(x));
-    });
-    content.appendChild(pathWrap);
+    const initial = result.pairs.slice(0, PREVIEW);
+    initial.forEach(p => content.appendChild(renderPairBlock(p)));
+    if (total > PREVIEW) {
+      const hidden = document.createElement('div');
+      hidden.className = 'cur-hidden-pairs';
+      hidden.style.display = 'none';
+      result.pairs.slice(PREVIEW).forEach(p => hidden.appendChild(renderPairBlock(p)));
+      content.appendChild(hidden);
+      const toggle = document.createElement('button');
+      toggle.className = 'cur-expand-toggle';
+      toggle.textContent = `Show ${total - PREVIEW} more`;
+      toggle.addEventListener('click', () => {
+        const open = hidden.style.display === 'block';
+        hidden.style.display = open ? 'none' : 'block';
+        toggle.textContent = open
+          ? `Show ${total - PREVIEW} more`
+          : `Hide ${total - PREVIEW}`;
+      });
+      content.appendChild(toggle);
+    }
   }
-  return card('Furthest pair', 'The longest shortest-path in the SEP citation graph', content);
+  return card('Furthest pairs', 'The longest shortest-paths in the (sub)graph', content);
+}
+
+function renderPairBlock(pair) {
+  const block = document.createElement('div');
+  block.className = 'cur-pair-block';
+  pair.path.forEach(id => {
+    const a = graph.getArticle(id);
+    if (a) block.appendChild(articleRow(a));
+  });
+  return block;
 }
 
 function mostCentralCard() {
-  const items = graph.mostCentralArticles(6);
+  const aset = allowedSet();
+  const items = graph.mostCentralArticles(6, aset);
   const content = document.createElement('div');
   content.className = 'cur-list';
   items.forEach(a => content.appendChild(articleRow(a, `${a.degree} connections`)));
-  return card('Most central', 'Articles with the most connections (in + out)', content);
+  return card('Most central', 'Articles with the most connections in this (sub)graph', content);
 }
 
 function lonelyCard() {
-  const items = graph.lonelyArticles(8, 1);
+  const aset = allowedSet();
+  const items = graph.lonelyArticles(8, 1, aset);
   const content = document.createElement('div');
   content.className = 'cur-list';
   if (!items.length) {
-    content.innerHTML = '<div class="cur-empty">Nothing lonely — every article is well-connected.</div>';
+    content.innerHTML = '<div class="cur-empty">Nothing lonely in this subgraph.</div>';
   } else {
     items.forEach(a => content.appendChild(articleRow(a, a.degree === 0 ? 'orphan' : `${a.degree} link`)));
   }
   return card('Lonely articles', 'Articles barely connected to anything else', content);
 }
 
-function isolatedClustersCard() {
-  const comps = graph.connectedComponents();
-  // The first component is the main graph; everything after is "isolated".
-  const isolated = comps.slice(1).filter(c => c.length >= 2).slice(0, 6);
-  const content = document.createElement('div');
-  content.className = 'cur-clusters';
-  if (!isolated.length) {
-    content.innerHTML = '<div class="cur-empty">The graph is fully connected — no isolated clusters.</div>';
-  } else {
-    isolated.forEach(comp => {
-      const block = document.createElement('div');
-      block.className = 'cur-cluster';
-      const head = document.createElement('div');
-      head.className = 'cur-cluster-head';
-      head.textContent = `Cluster of ${comp.length}`;
-      block.appendChild(head);
-      comp.slice(0, 5).forEach(id => {
-        const a = graph.getArticle(id);
-        if (a) block.appendChild(articleRow(a));
-      });
-      if (comp.length > 5) {
-        const more = document.createElement('div');
-        more.className = 'cur-cluster-more';
-        more.textContent = `+ ${comp.length - 5} more`;
-        block.appendChild(more);
-      }
-      content.appendChild(block);
-    });
-  }
-  return card('Isolated pockets', 'Mini-graphs disconnected from the main SEP', content);
-}
-
 function bridgesCard() {
-  const bridges = graph.bridgeArticles();
-  // Sort by degree desc; pick the top 8.
-  bridges.sort((a, b) => graph.degree(b.id) - graph.degree(a.id));
+  const aset = allowedSet();
+  const bridges = graph.bridgeArticles(aset);
+  bridges.sort((a, b) => graph.degreeIn(b.id, aset) - graph.degreeIn(a.id, aset));
   const top = bridges.slice(0, 8);
   const content = document.createElement('div');
   content.className = 'cur-list';
   if (!top.length) {
-    content.innerHTML = '<div class="cur-empty">No critical bridges found.</div>';
+    content.innerHTML = '<div class="cur-empty">No critical bridges in this subgraph.</div>';
   } else {
-    top.forEach(a => content.appendChild(articleRow(a, `${graph.degree(a.id)} connections`)));
+    top.forEach(a => content.appendChild(articleRow(a, `${graph.degreeIn(a.id, aset)} connections`)));
   }
   return card(
     'Bridge articles',
-    'Removing one of these would split the graph apart',
+    'Removing one of these would split the (sub)graph apart',
     content
   );
 }

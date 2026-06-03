@@ -123,19 +123,35 @@ export function buildGraph(data) {
     return s ? s.size : 0;
   }
 
-  function mostCentralArticles(n = 5) {
-    return articleList.slice()
-      .sort((a, b) => degree(b.id) - degree(a.id))
-      .slice(0, n)
-      .map(a => ({ ...a, degree: degree(a.id) }));
+  // Degree restricted to within an allowed subgraph.
+  function degreeIn(id, allowedSet) {
+    const s = adj.get(id);
+    if (!s) return 0;
+    if (!allowedSet) return s.size;
+    let count = 0;
+    for (const x of s) if (allowedSet.has(x)) count++;
+    return count;
   }
 
-  function lonelyArticles(n = 10, maxDegree = 1) {
-    return articleList
-      .filter(a => degree(a.id) <= maxDegree)
-      .sort((a, b) => degree(a.id) - degree(b.id))
+  function mostCentralArticles(n = 5, allowedSet) {
+    const pool = allowedSet
+      ? articleList.filter(a => allowedSet.has(a.id))
+      : articleList;
+    return pool.slice()
+      .sort((a, b) => degreeIn(b.id, allowedSet) - degreeIn(a.id, allowedSet))
       .slice(0, n)
-      .map(a => ({ ...a, degree: degree(a.id) }));
+      .map(a => ({ ...a, degree: degreeIn(a.id, allowedSet) }));
+  }
+
+  function lonelyArticles(n = 10, maxDegree = 1, allowedSet) {
+    const pool = allowedSet
+      ? articleList.filter(a => allowedSet.has(a.id))
+      : articleList;
+    return pool
+      .filter(a => degreeIn(a.id, allowedSet) <= maxDegree)
+      .sort((a, b) => degreeIn(a.id, allowedSet) - degreeIn(b.id, allowedSet))
+      .slice(0, n)
+      .map(a => ({ ...a, degree: degreeIn(a.id, allowedSet) }));
   }
 
   // BFS-based connected components (treat adjacency as undirected, ignoring isolated articles)
@@ -166,14 +182,25 @@ export function buildGraph(data) {
   }
 
   // Cut-vertices / articulation points using Tarjan's algorithm.
-  // Returns array of ids whose removal increases the number of components.
-  function bridgeArticles() {
-    const ids = articleList.map(a => a.id);
+  // Optionally restricted to a subgraph induced by `allowedSet`.
+  function bridgeArticles(allowedSet) {
+    const pool = allowedSet
+      ? articleList.filter(a => allowedSet.has(a.id))
+      : articleList;
+    const ids = pool.map(a => a.id);
     const disc = new Map();
     const low = new Map();
     const parent = new Map();
     const ap = new Set();
     let timer = 0;
+    const neighbors = u => {
+      const s = adj.get(u);
+      if (!s) return [];
+      if (!allowedSet) return Array.from(s);
+      const out = [];
+      for (const v of s) if (allowedSet.has(v)) out.push(v);
+      return out;
+    };
 
     function dfs(u) {
       const stack = [{ u, iter: null, children: 0 }];
@@ -183,7 +210,7 @@ export function buildGraph(data) {
           disc.set(frame.u, timer);
           low.set(frame.u, timer);
           timer++;
-          frame.iter = (adj.get(frame.u) || new Set()).values();
+          frame.iter = neighbors(frame.u)[Symbol.iterator]();
         }
         let advanced = false;
         let next = frame.iter.next();
@@ -201,7 +228,6 @@ export function buildGraph(data) {
           next = frame.iter.next();
         }
         if (!advanced) {
-          // Backtrack
           stack.pop();
           if (stack.length) {
             const par = stack[stack.length - 1];
@@ -209,7 +235,6 @@ export function buildGraph(data) {
             const isRoot = parent.get(par.u) === undefined;
             if (!isRoot && low.get(frame.u) >= disc.get(par.u)) ap.add(par.u);
           } else {
-            // u is root
             if (frame.children > 1) ap.add(frame.u);
           }
         }
@@ -219,45 +244,66 @@ export function buildGraph(data) {
     return Array.from(ap).map(id => articlesById.get(id)).filter(Boolean);
   }
 
-  // Compute the longest shortest-path (graph diameter). Expensive but cached.
-  let _diameterCache = null;
-  function diameter() {
-    if (_diameterCache) return _diameterCache;
-    let best = { a: null, b: null, len: 0, path: null };
-    // Only consider the largest connected component to keep this tractable.
-    const comps = connectedComponents();
-    const main = new Set(comps[0] || []);
-    for (const start of main) {
-      // BFS from start
+  // Compute the longest shortest-path (graph diameter) AND every pair sharing
+  // that max distance. `allowedSet` optionally restricts traversal + endpoints.
+  const _diameterCache = new Map();   // cacheKey -> result
+  function diameter(allowedSet) {
+    const cacheKey = allowedSet
+      ? 'sub:' + Array.from(allowedSet).sort().join(',')
+      : 'all';
+    if (_diameterCache.has(cacheKey)) return _diameterCache.get(cacheKey);
+
+    let maxLen = 0;
+    const seenPairs = new Set();
+    const pairs = [];   // { a, b, len, path }
+
+    // Source pool: if filtered, only allowed articles can start a BFS.
+    const sources = allowedSet
+      ? Array.from(allowedSet)
+      : articleList.map(a => a.id);
+
+    for (const start of sources) {
       const dist = new Map([[start, 0]]);
       const prev = new Map();
       const queue = [start];
-      let farId = start;
-      let farD = 0;
       while (queue.length) {
         const cur = queue.shift();
         const d = dist.get(cur);
-        if (d > farD) { farD = d; farId = cur; }
         const neigh = adj.get(cur);
         if (!neigh) continue;
         for (const n of neigh) {
           if (dist.has(n)) continue;
+          if (allowedSet && !allowedSet.has(n)) continue;
           dist.set(n, d + 1);
           prev.set(n, cur);
           queue.push(n);
         }
       }
-      if (farD > best.len) {
-        // Reconstruct path
-        const path = [farId];
-        let p = farId;
+      // Walk all distances reachable from `start`; track the max + collect pairs.
+      for (const [endId, d] of dist) {
+        if (endId === start) continue;
+        if (d < maxLen) continue;
+        if (d > maxLen) {
+          maxLen = d;
+          pairs.length = 0;
+          seenPairs.clear();
+        }
+        // Use sorted pair key to dedupe (a,b) vs (b,a)
+        const key = start < endId ? `${start}|${endId}` : `${endId}|${start}`;
+        if (seenPairs.has(key)) continue;
+        seenPairs.add(key);
+        // Reconstruct path from start to endId
+        const path = [endId];
+        let p = endId;
         while (prev.has(p)) { p = prev.get(p); path.push(p); }
-        best = { a: start, b: farId, len: farD, path: path.reverse() };
+        pairs.push({ a: start, b: endId, len: d, path: path.reverse() });
       }
     }
-    _diameterCache = best;
-    return best;
+    const result = { len: maxLen, pairs };
+    _diameterCache.set(cacheKey, result);
+    return result;
   }
+  function clearDiameterCache() { _diameterCache.clear(); }
 
   function searchArticles(query, limit = 8) {
     const q = (query || '').trim().toLowerCase();
@@ -283,11 +329,13 @@ export function buildGraph(data) {
     searchArticles,
     allTopCategories,
     degree,
+    degreeIn,
     mostCentralArticles,
     lonelyArticles,
     connectedComponents,
     bridgeArticles,
-    diameter
+    diameter,
+    clearDiameterCache
   };
   return _graph;
 }
