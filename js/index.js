@@ -50,6 +50,14 @@ if (helpButton) {
     });
 }
 
+// Help close button
+const helpClose = document.getElementById("help-close");
+if (helpClose) {
+    helpClose.addEventListener("click", () => {
+        helpOverlay.classList.add("hidden");
+    });
+}
+
 // Close overlay when clicking outside the help boxes
 helpOverlay.addEventListener("click", (event) => {
   console.log("clicked")
