@@ -9,19 +9,20 @@ export function buildGraph(data) {
   // Flatten hierarchy → article leaves (only nodes with article_url are playable).
   const articlesById = new Map();
   const articleList = [];
+  const clean = s => (s == null ? s : String(s).trim());
   function walk(node, parentCat, broaderCat) {
     if (node.article_url) {
       const a = {
         id: node.id || node.name,
-        name: node.name,
-        category: parentCat,
-        broaderCategory: broaderCat,
+        name: clean(node.name),
+        category: clean(parentCat),
+        broaderCategory: clean(broaderCat),
         articleUrl: node.article_url
       };
       articlesById.set(a.id, a);
       articleList.push(a);
     }
-    if (node.children) node.children.forEach(c => walk(c, node.name, parentCat));
+    if (node.children) node.children.forEach(c => walk(c, clean(node.name), clean(parentCat)));
   }
   walk(data.hierarchy, 'Root', null);
 
