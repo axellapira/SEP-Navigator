@@ -4,9 +4,10 @@
 // During `playing`, the network graph is the playing field. Clicks on
 // non-neighbor articles are rejected; clicks on neighbors advance the run.
 //
-// Share URLs: ?race=<startId>,<targetId>[,<clicks>,<time>]
-// When loaded with ?race=, pops the setup window pre-filled with the pair
-// and a "Beat: N clicks · M:SS" challenge header.
+// Share URLs: ?race=<startId>,<targetId>[&c=<clicks>&t=<time>][&cats=<c1|c2|…>&lock=0|1]
+// When loaded with ?race=, pops the setup window pre-filled with the pair,
+// restores category filters + lock-graph flag, and optionally shows a
+// "Beat: N clicks · M:SS" challenge header.
 
 import { buildGraph } from './article_graph.js';
 import globalState from './globalState.js';
@@ -54,6 +55,7 @@ export function initSpeedrun(data) {
       renderSuggestions(e.target.value, 'target'));
     elements.setup.querySelector('#srRandomBtn')?.addEventListener('click', randomRun);
     elements.setup.querySelector('#srStartRunBtn')?.addEventListener('click', tryStartRun);
+    elements.setup.querySelector('#srShareSetupBtn')?.addEventListener('click', shareSetupChallenge);
     renderCategoryFilters();
     const lockCb = elements.setup.querySelector('#srLockGraph');
     if (lockCb) {
@@ -98,8 +100,26 @@ function maybeLoadRaceFromURL() {
     console.warn('Race URL references unknown article ids', startId, targetId);
     return;
   }
+  // Restore category filters + lock-graph flag if encoded.
+  const catsParam = params.get('cats');
+  if (catsParam) {
+    const all = new Set(graph.allTopCategories());
+    const requested = catsParam.split('|').map(s => decodeURIComponent(s).trim()).filter(Boolean);
+    const valid = requested.filter(c => all.has(c));
+    if (valid.length > 0) {
+      allowedCategories = new Set(valid);
+    }
+  }
+  const lockParam = params.get('lock');
+  if (lockParam === '0' || lockParam === '1') {
+    lockGraphToCategories = lockParam === '1';
+  }
   // Open setup window and pre-fill
   enterSetup();
+  // Re-render filter chips and lock checkbox to reflect restored state.
+  renderCategoryFilters();
+  const lockCb = elements.setup?.querySelector('#srLockGraph');
+  if (lockCb) lockCb.checked = lockGraphToCategories;
   pickArticle(startArticle, 'start');
   pickArticle(targetArticle, 'target');
   // Show the challenge header (someone else's score) if present
@@ -203,6 +223,8 @@ function resetSelections() {
     elements.setup.querySelector('#srTargetPick').innerHTML = '<em>pick a target article…</em>';
     elements.setup.querySelector('#srSuggestions').innerHTML = '';
     elements.setup.querySelector('#srStartRunBtn').disabled = true;
+    const shareBtn = elements.setup.querySelector('#srShareSetupBtn');
+    if (shareBtn) { shareBtn.disabled = true; shareBtn.textContent = 'Share challenge'; }
     elements.setup.querySelector('#srRunSummary').textContent = '';
   }
 }
@@ -249,10 +271,12 @@ function pickArticle(a, slot) {
 
 function updateStartButton() {
   const btn = elements.setup?.querySelector('#srStartRunBtn');
+  const shareBtn = elements.setup?.querySelector('#srShareSetupBtn');
   const summary = elements.setup?.querySelector('#srRunSummary');
   if (!btn) return;
   const can = pendingStart && pendingTarget && pendingStart.id !== pendingTarget.id;
   btn.disabled = !can;
+  if (shareBtn) shareBtn.disabled = !can;
   if (summary && can) {
     const allowed = allowedSetIfLocked();
     // Allow start/target to bypass category restriction so manual picks always work.
@@ -261,11 +285,39 @@ function updateStartButton() {
     if (!path) {
       summary.innerHTML = `<span class="sr-warn">No path under current filters — try different articles or loosen categories.</span>`;
       btn.disabled = true;
+      if (shareBtn) shareBtn.disabled = true;
     } else {
       summary.innerHTML = `Optimal path: <strong>${path.length - 1}</strong> click${path.length - 1 === 1 ? '' : 's'}.`;
     }
   } else if (summary) {
     summary.textContent = '';
+  }
+}
+
+function shareSetupChallenge() {
+  if (!pendingStart || !pendingTarget) return;
+  const btn = elements.setup?.querySelector('#srShareSetupBtn');
+  const params = new URLSearchParams();
+  params.set('race', `${pendingStart.id},${pendingTarget.id}`);
+  // Encode category filter only if it's a real restriction (not all categories).
+  const allCats = graph.allTopCategories();
+  const isAll = allCats.length === allowedCategories.size &&
+    allCats.every(c => allowedCategories.has(c));
+  if (!isAll && allowedCategories.size > 0) {
+    params.set('cats', Array.from(allowedCategories).map(encodeURIComponent).join('|'));
+  }
+  params.set('lock', lockGraphToCategories ? '1' : '0');
+  const url = `${location.origin}${location.pathname}?${params.toString()}`;
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      if (!btn) return;
+      btn.textContent = 'Link copied!';
+      setTimeout(() => { btn.textContent = 'Share challenge'; }, 1400);
+    }, () => {
+      if (btn) btn.textContent = 'Copy failed';
+    });
+  } else if (btn) {
+    btn.textContent = 'Clipboard unavailable';
   }
 }
 
@@ -701,6 +753,13 @@ function showVictory({ clicks, time, optimal, stars, start, target, gaveUp, opti
     params.set('race', `${startId},${targetId}`);
     if (clicks != null) params.set('c', String(clicks));
     if (time != null) params.set('t', String(Math.round(time)));
+    const allCats = graph.allTopCategories();
+    const isAll = allCats.length === allowedCategories.size &&
+      allCats.every(c => allowedCategories.has(c));
+    if (!isAll && allowedCategories.size > 0) {
+      params.set('cats', Array.from(allowedCategories).map(encodeURIComponent).join('|'));
+    }
+    params.set('lock', lockGraphToCategories ? '1' : '0');
     const url = `${location.origin}${location.pathname}?${params.toString()}`;
     navigator.clipboard?.writeText(url).then(() => {
       shareBtn.textContent = 'Copied!';
