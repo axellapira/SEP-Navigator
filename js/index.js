@@ -70,6 +70,48 @@ helpOverlay.addEventListener("click", (event) => {
 // Reading list panel (independent of viz init)
 initReadingList();
 
+// Viz preview cards — calm "this is what you're about to see" overlays
+// that cover each chart window. Click anywhere on the card to dismiss.
+const PREVIEW_KEY = 'sep-previews-dismissed-v1';
+function getDismissed() {
+  try { return JSON.parse(localStorage.getItem(PREVIEW_KEY) || '{}'); }
+  catch (_) { return {}; }
+}
+function setDismissed(map) {
+  try { localStorage.setItem(PREVIEW_KEY, JSON.stringify(map)); } catch (_) {}
+}
+function dismissPreview(viz, persist = true) {
+  const card = document.querySelector(`.viz-preview[data-viz="${viz}"]`);
+  if (!card) return;
+  card.remove();
+  if (persist) {
+    const d = getDismissed();
+    d[viz] = 1;
+    setDismissed(d);
+  }
+  // Nudge the viz to re-center now that its container is fully visible
+  window.dispatchEvent(new Event('resize'));
+}
+// On load, immediately strip any previews the user already dismissed before
+const _dismissed = getDismissed();
+Object.keys(_dismissed).forEach(viz => dismissPreview(viz, false));
+
+// Delegated click — survives anything that might re-render.
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.viz-preview');
+  if (!card) return;
+  e.preventDefault();
+  e.stopPropagation();
+  dismissPreview(card.dataset.viz);
+});
+
+// "Show intro cards again" in help resets dismissal + reloads
+document.getElementById('help-reopen-welcome')?.addEventListener('click', () => {
+  document.getElementById('help-overlay')?.classList.add('hidden');
+  setDismissed({});
+  location.reload();
+});
+
 // Initialise
 initializeVisualizations();
 

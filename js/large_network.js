@@ -117,11 +117,11 @@ function zoomed(event) {
 
 
     const myWarmVariedColors = [
-        "#65C977", // Metaphysics
-        "#db4848", // History of Philosophy
-        "#B874D9", // Philosophy of Knowledge
-        "#E69300", // Moral Philosophy (adjusted for a darker, orangey tone)
-        "#5CAFFD"  // Logic
+        "#3e8e5a", // Metaphysics (forest green)
+        "#c0392b", // History of Philosophy (clay red)
+        "#6a3d8a", // Philosophy of Knowledge (amethyst)
+        "#e6a23c", // Moral Philosophy (sun gold)
+        "#2e7eb6"  // Logic (aegean blue)
     ];
     
     
@@ -144,29 +144,35 @@ function zoomed(event) {
     function fitView() {
     // Get bounding box of everything in <g>
     const bounds = g.node().getBBox();
-    const fullWidth  = width;  
-    const fullHeight = height; 
-
+    if (!bounds.width || !bounds.height) return; // simulation hasn't laid out yet
+    // Re-measure container width each call so resizes stay centered
+    const cw = document.querySelector(container).offsetWidth || width;
+    const fullWidth  = cw - 25;
+    const fullHeight = height;
 
     const widthScale  = fullWidth  / bounds.width;
     const heightScale = fullHeight / bounds.height;
-    const zoomLevel   = 0.9 * Math.min(widthScale, heightScale); // a factor < 1 for padding
+    const zoomLevel   = 0.9 * Math.min(widthScale, heightScale);
 
-    // Compute center of bounding box
     const midX = bounds.x + bounds.width/2;
     const midY = bounds.y + bounds.height/2;
 
-    // Define a transform
     const transform = d3.zoomIdentity
         .translate(fullWidth/2, fullHeight/2)
         .scale(zoomLevel)
         .translate(-midX, -midY);
 
-    //  animate
     svg.transition()
-        .duration(750)
+        .duration(450)
         .call(zoom.transform, transform);
 }
+
+// Also recenter on window resize (debounced)
+let _fitTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_fitTimer);
+  _fitTimer = setTimeout(() => fitView(), 200);
+});
 
 function incrementZoom(delta = 0.1) {
     // look at current slider value
@@ -587,11 +593,11 @@ label = labelEnter.merge(label);
                 .attr('y', d => d.y - 10);
         });
     
-        // 8) Adjust the view if necessary
-        incrementZoom(0.01);
-
-        // then i fit the view a couple of times according to the current positioning of the nodes so I dont have to wait until the simulation has fully ended
-        
+        // 8) Re-center the view as the simulation settles
+        setTimeout(fitView, 150);
+        setTimeout(fitView, 600);
+        setTimeout(fitView, 1500);
+        setTimeout(fitView, 3000);
     }
     
 
@@ -693,10 +699,12 @@ label = labelEnter.merge(label);
         simulation.force('link').links(filteredLinks);
         simulation.alpha(1).restart();
     
-        // 7) Adjust the view (fitView)
+        // 7) Adjust the view (fitView) — retry as the simulation settles
         fitView();
-        setTimeout(fitView, 100); // Adjustonce
-        setTimeout(fitView, 1000); // Final adjustment
+        setTimeout(fitView, 150);
+        setTimeout(fitView, 600);
+        setTimeout(fitView, 1500);
+        setTimeout(fitView, 3000);
     
         // 8) On each tick, reposition elements
         simulation.on('tick', () => {

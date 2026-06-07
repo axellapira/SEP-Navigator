@@ -230,12 +230,12 @@ function bridgesCard() {
 function colorForCategory(name) {
   const key = (name || '').trim();
   const map = {
-    'History of Philosophy':   '#db4848',
-    'Moral Philosophy':        '#E69300',
-    'Metaphysics':             '#65C977',
-    'Philosophy of Knowledge': '#B874D9',
-    'Philosophy of Logic':     '#5CAFFD',
-    'Logic':                   '#5CAFFD'
+    'History of Philosophy':   '#c0392b',
+    'Moral Philosophy':        '#e6a23c',
+    'Metaphysics':             '#3e8e5a',
+    'Philosophy of Knowledge': '#6a3d8a',
+    'Philosophy of Logic':     '#2e7eb6',
+    'Logic':                   '#2e7eb6'
   };
   return map[key] || '#8c1515';
 }

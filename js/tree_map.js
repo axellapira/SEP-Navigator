@@ -127,11 +127,11 @@ const clippedGroup = svg.append('g')
         .paddingTop(d => d.depth === 0 ? 40 : 20);
 
         const myWarmVariedColors = [
-            "#db4848", // History of Philosophy (slightly darker)
-            "#E69300", // Moral Philosophy
-            "#65C977", // Metaphysics
-            "#B874D9", // Philosophy of Knowledge (slightly darker)
-            "#5CAFFD"  // Logic
+            "#c0392b", // History of Philosophy (clay red)
+            "#e6a23c", // Moral Philosophy (sun gold)
+            "#3e8e5a", // Metaphysics (forest green)
+            "#6a3d8a", // Philosophy of Knowledge (amethyst)
+            "#2e7eb6"  // Logic (aegean blue)
         ];
         
         
